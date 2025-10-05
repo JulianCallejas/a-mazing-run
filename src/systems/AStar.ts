@@ -19,9 +19,9 @@ export class AStar {
   }
 
   public findPath(
-    startX: number, 
-    startY: number, 
-    goalX: number, 
+    startX: number,
+    startY: number,
+    goalX: number,
     goalY: number
   ): Array<{x: number, y: number}> {
     const openSet: Node[] = [];
@@ -127,10 +127,10 @@ export class AStar {
 
   private isValidPosition(x: number, y: number): boolean {
     return (
-      x >= 0 && 
-      x < this.width && 
-      y >= 0 && 
-      y < this.height && 
+      x >= 0 &&
+      x < this.width &&
+      y >= 0 &&
+      y < this.height &&
       this.maze[y][x] !== 1 // Not a wall
     );
   }

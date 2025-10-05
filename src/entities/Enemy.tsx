@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Mesh, Vector3, Group } from 'three';
+import { Vector3, Group } from 'three';
 import { AStar } from '../systems/AStar';
 
 interface EnemyProps {
@@ -31,7 +31,7 @@ const Enemy: React.FC<EnemyProps> = ({
 
   const astar = useRef(new AStar(maze));
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }): void => {
     if (!groupRef.current || isPaused) return;
 
     const elapsed = clock.getElapsedTime();

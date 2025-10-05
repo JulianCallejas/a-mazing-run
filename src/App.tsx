@@ -5,7 +5,7 @@ import InstructionsScreen from './ui/screens/InstructionsScreen';
 import AboutScreen from './ui/screens/AboutScreen';
 import GameScreen from './ui/screens/GameScreen';
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
       <div className="min-h-screen bg-gradient-to-br from-amber-900 via-amber-800 to-amber-900">
@@ -18,6 +18,6 @@ function App() {
       </div>
     </Router>
   );
-}
+};
 
 export default App;

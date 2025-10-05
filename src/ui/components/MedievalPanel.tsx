@@ -25,10 +25,7 @@ const MedievalPanel: React.FC<MedievalPanelProps> = ({
       <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-amber-700 rounded-br-lg" />
       
       {/* Parchment texture overlay */}
-      <div className="absolute inset-0 opacity-10 bg-repeat" 
-           style={{
-             backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='0.1'%3E%3Cpath d='M0 0h20v20H0V0zm10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14z'/%3E%3C/g%3E%3C/svg%3E")`
-           }} />
+      <div className="absolute inset-0 opacity-10 bg-repeat bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22%23000%22%20fill-opacity%3D%220.1%22%3E%3Cpath%20d%3D%22M0%200h20v20H0V0zm10%2017a7%207%200%201%200%200-14%207%207%200%200%200%200%2014z%22/%3E%3C/g%3E%3C/svg%3E')]" />
       
       <div className="relative p-6">
         {title && (

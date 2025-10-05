@@ -44,9 +44,9 @@ interface GameActions {
   // Settings
   toggleSound: () => void;
   toggleMusic: () => void;
+  setSoundVolume: (volume: number) => void;
+  setMusicVolume: (volume: number) => void;
 }
-
-type GameStore = GameState & GameActions;
 
 const useGameStore = create<GameState & GameActions>()(
   devtools(

@@ -19,17 +19,17 @@ const HomeScreen: React.FC = () => {
   
   const topScores = ScoreManager.getTopScores().slice(0, 3);
 
-  const handleStartGame = () => {
+  const handleStartGame = (): void => {
     startGame();
     // Use setTimeout to avoid potential race conditions
     setTimeout(() => navigate('/game'), 0);
   };
 
-  const handleDifficultyChange = (newDifficulty: keyof typeof GAME_CONFIG.DIFFICULTY) => {
+  const handleDifficultyChange = (newDifficulty: keyof typeof GAME_CONFIG.DIFFICULTY): void => {
     setDifficulty(newDifficulty);
   };
 
-  const handleVisualEffectChange = (effect: keyof typeof GAME_CONFIG.VISUAL_EFFECTS) => {
+  const handleVisualEffectChange = (effect: keyof typeof GAME_CONFIG.VISUAL_EFFECTS): void => {
     setVisualEffect(effect);
   };
 
