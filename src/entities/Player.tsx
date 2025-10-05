@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, Vector3 } from 'three';
 
@@ -56,24 +56,19 @@ const Player: React.FC<PlayerProps> = ({ position, onPositionChange, onDirection
     }
   });
 
-  const moveToPosition = useCallback((newPosition: [number, number, number]): void => {
-    if (isMoving.current) return;
-    
-    previousPosition.current.copy(currentPosition.current);
-    targetPosition.current.set(...newPosition);
-    isMoving.current = true;
-    movementStartTime.current = performance.now() / 1000;
-    
-    if (onPositionChange) {
-      onPositionChange({ x: newPosition[0], y: newPosition[2] });
-    }
-  }, [onPositionChange]);
-
   useEffect(() => {
     if (!isMoving.current) {
-      moveToPosition(position);
+      // Move player to new position
+      previousPosition.current.copy(currentPosition.current);
+      targetPosition.current.set(...position);
+      isMoving.current = true;
+      movementStartTime.current = performance.now() / 1000;
+
+      if (onPositionChange) {
+        onPositionChange({ x: position[0], y: position[2] });
+      }
     }
-  }, [position, moveToPosition]);
+  }, [position, onPositionChange]);
 
   return (
     <group>
