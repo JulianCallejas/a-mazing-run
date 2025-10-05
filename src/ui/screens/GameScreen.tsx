@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
@@ -14,9 +15,8 @@ import MedievalButton from '../components/MedievalButton';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { 
   Pause, Play, Camera, Home, RotateCcw, 
-  Timer, Trophy, Zap, Target 
+  Timer, Trophy, Zap
 } from 'lucide-react';
-import * as THREE from 'three';
 
 const GameScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -147,7 +147,7 @@ const GameScreen: React.FC = () => {
       }
       audioSystem.stopBackgroundMusic();
     };
-  }, [gameStatus, difficulty]);
+  }, [gameStatus, difficulty, setLoading, updateEnemies, updatePlayerPosition]);
 
   // Game time tracking - only update local state, not Zustand store during gameplay
   useEffect(() => {
@@ -180,6 +180,19 @@ const GameScreen: React.FC = () => {
     window.addEventListener('wheel', handleWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
+
+  // Win condition handler
+  const handleWin = useCallback(() => {
+    const finalTime = gameTime; // Use the current game time
+    const finalScore = ScoreManager.saveScore(
+      finalTime,
+      difficulty,
+      visualEffect
+    );
+    
+    endGame('won', finalScore.score, finalTime);
+    audioSystem.playSoundEffect('victory', 0.8);
+  }, [gameTime, difficulty, visualEffect, endGame]);
 
   // Keyboard controls
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -243,7 +256,7 @@ const GameScreen: React.FC = () => {
     } else {
       audioSystem.playSoundEffect('wall-hit', 0.5);
     }
-  }, [gameStatus, playerPosition, cameraMode, maze, cameraRotation]);
+  }, [gameStatus, playerPosition, cameraMode, maze, cameraRotation, handleWin, toggleCameraMode, updatePlayerPosition, gameTime, difficulty, visualEffect, endGame]);
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     keysPressed.current.delete(event.code);
@@ -259,17 +272,6 @@ const GameScreen: React.FC = () => {
     };
   }, [handleKeyDown, handleKeyUp]);
 
-  const handleWin = () => {
-    const finalTime = gameTime; // Use the current game time
-    const finalScore = ScoreManager.saveScore(
-      finalTime,
-      difficulty,
-      visualEffect
-    );
-    
-    endGame('won', finalScore.score, finalTime);
-    audioSystem.playSoundEffect('victory', 0.8);
-  };
 
   const handleLose = () => {
     endGame('lost');
@@ -415,14 +417,14 @@ const GameScreen: React.FC = () => {
     const playerY = playerPosition.z; // Note: using z from store
     
     if (cameraMode === 'aerial') {
-      return [playerX, 20, playerY + 5];
+      return new THREE.Vector3(playerX, 20, playerY + 5);
     } else {
       // Third-person camera with rotation and zoom
       const height = 2.5;
       const cameraX = playerX + Math.sin(cameraRotation) * cameraDistance;
       const cameraZ = playerY + Math.cos(cameraRotation) * cameraDistance;
       
-      return [cameraX, height, cameraZ];
+      return new THREE.Vector3(cameraX, height, cameraZ);
     }
   };
 
@@ -589,7 +591,7 @@ const GameScreen: React.FC = () => {
           position={[playerPosition.x, 0.5, playerPosition.z]}
         />
         
-        {enemies.map((enemy, index) => (
+        {enemies.map((enemy) => (
           <Enemy
             key={enemy.id}
             position={[enemy.position.x, 0.5, enemy.position.z]}
