@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGameContext } from '../../core/GameContext';
+import useGameStore from '../../store/useGameStore';
 import { GAME_CONFIG } from '../../utils/constants';
 import { ScoreManager } from '../../core/ScoreManager';
 import MedievalButton from '../components/MedievalButton';
@@ -9,20 +9,28 @@ import { Sword, Crown, Settings } from 'lucide-react';
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { state, dispatch } = useGameContext();
+  
+  // Use direct selectors to avoid potential infinite loops
+  const difficulty = useGameStore(state => state.difficulty);
+  const visualEffect = useGameStore(state => state.visualEffect);
+  const startGame = useGameStore(state => state.startGame);
+  const setDifficulty = useGameStore(state => state.setDifficulty);
+  const setVisualEffect = useGameStore(state => state.setVisualEffect);
+  
   const topScores = ScoreManager.getTopScores().slice(0, 3);
 
   const handleStartGame = () => {
-    dispatch({ type: 'START_GAME' });
-    navigate('/game');
+    startGame();
+    // Use setTimeout to avoid potential race conditions
+    setTimeout(() => navigate('/game'), 0);
   };
 
-  const handleDifficultyChange = (difficulty: keyof typeof GAME_CONFIG.DIFFICULTY) => {
-    dispatch({ type: 'SET_DIFFICULTY', difficulty });
+  const handleDifficultyChange = (newDifficulty: keyof typeof GAME_CONFIG.DIFFICULTY) => {
+    setDifficulty(newDifficulty);
   };
 
   const handleVisualEffectChange = (effect: keyof typeof GAME_CONFIG.VISUAL_EFFECTS) => {
-    dispatch({ type: 'SET_VISUAL_EFFECT', effect });
+    setVisualEffect(effect);
   };
 
   return (
@@ -59,7 +67,7 @@ const HomeScreen: React.FC = () => {
                     onClick={() => handleDifficultyChange(key as keyof typeof GAME_CONFIG.DIFFICULTY)}
                     className={`
                       p-3 rounded-lg border-2 font-cinzel text-sm transition-all duration-200
-                      ${state.difficulty === key
+                      ${difficulty === key
                         ? 'bg-amber-600 border-amber-800 text-white shadow-lg'
                         : 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200'
                       }
@@ -83,7 +91,7 @@ const HomeScreen: React.FC = () => {
                     onClick={() => handleVisualEffectChange(key as keyof typeof GAME_CONFIG.VISUAL_EFFECTS)}
                     className={`
                       p-3 rounded-lg border-2 font-cinzel text-sm transition-all duration-200
-                      ${state.visualEffect === key
+                      ${visualEffect === key
                         ? 'bg-purple-600 border-purple-800 text-white shadow-lg'
                         : 'bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200'
                       }
