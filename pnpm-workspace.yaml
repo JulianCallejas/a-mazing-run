@@ -1,1 +1,8 @@
 minimunReleaseAge: 7,200
+
+overrides:
+  browserslist: ^4.28.7
+  source-map-js: ^1.2.2
+  fflate@<0.6.11: ^0.6.11
+  '@babel/core@<7.29.6': ^7.29.6
+  baseline-browser-mapping: ^2.11.0

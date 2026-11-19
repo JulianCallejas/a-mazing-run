@@ -28,11 +28,6 @@ export const distance2D = (x1: number, y1: number, x2: number, y2: number): numb
   return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 };
 
-export const playSound = (soundName: string, volume: number = 0.5): void => {
-  // Mock sound system - replace with actual audio implementation
-  console.log(`Playing sound: ${soundName} at volume ${volume}`);
-};
-
 export const vibrate = (pattern: number | number[]): void => {
   if ('vibrate' in navigator) {
     navigator.vibrate(pattern);

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import MedievalButton from '../components/MedievalButton';
 import MedievalPanel from '../components/MedievalPanel';
 import { 
-  Shield, Sword, Code, Mail, Github, 
-  Linkedin, Globe, Heart, Star 
+  Shield, Sword, Code, Mail, GitBranch, 
+  Briefcase, Globe, Heart, Star 
 } from 'lucide-react';
 
 const AboutScreen: React.FC = () => {
@@ -72,14 +72,14 @@ const AboutScreen: React.FC = () => {
                         href="https://github.com/jc-develop" 
                         className="flex items-center text-amber-700 hover:text-amber-900 transition-colors"
                       >
-                        <Github className="w-4 h-4 mr-2" />
+                        <GitBranch className="w-4 h-4 mr-2" />
                         <span className="font-cinzel">github.com/jc-develop</span>
                       </a>
                       <a 
                         href="https://linkedin.com/in/jc-develop" 
                         className="flex items-center text-amber-700 hover:text-amber-900 transition-colors"
                       >
-                        <Linkedin className="w-4 h-4 mr-2" />
+                        <Briefcase className="w-4 h-4 mr-2" />
                         <span className="font-cinzel">LinkedIn Profile</span>
                       </a>
                     </div>

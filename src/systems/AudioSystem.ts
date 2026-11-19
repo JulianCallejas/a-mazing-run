@@ -1,48 +1,30 @@
+/**
+ * Placeholder audio system. It keeps the public API used by the game and only
+ * tracks settings; the procedural WebAudio implementation replaces it in T8.
+ */
 export class AudioSystem {
-  private backgroundMusic: HTMLAudioElement | null = null;
-  private soundEffects: Map<string, HTMLAudioElement> = new Map();
   private musicVolume = 0.3;
   private sfxVolume = 0.5;
   private musicEnabled = true;
   private sfxEnabled = true;
 
-  constructor() {
-    this.initializeAudio();
+  public playBackgroundMusic(_track: string = 'medieval-theme'): void {
+    if (!this.musicEnabled || this.musicVolume <= 0) return;
   }
 
-  private initializeAudio(): void {
-    // Mock audio system - replace with actual audio files
-    console.log('Audio system initialized');
-  }
+  public stopBackgroundMusic(): void {}
 
-  public playBackgroundMusic(track: string = 'medieval-theme'): void {
-    if (!this.musicEnabled) return;
-    
-    console.log(`Playing background music: ${track}`);
-    // Mock implementation
-  }
-
-  public stopBackgroundMusic(): void {
-    console.log('Stopping background music');
-    // Mock implementation
-  }
-
-  public playSoundEffect(sound: string, volume?: number): void {
+  public playSoundEffect(_sound: string, volume?: number): void {
     if (!this.sfxEnabled) return;
-    
-    const actualVolume = volume ?? this.sfxVolume;
-    console.log(`Playing sound effect: ${sound} at volume ${actualVolume}`);
-    // Mock implementation
+    void (volume ?? this.sfxVolume);
   }
 
   public setMusicVolume(volume: number): void {
     this.musicVolume = Math.max(0, Math.min(1, volume));
-    console.log(`Music volume set to: ${this.musicVolume}`);
   }
 
   public setSfxVolume(volume: number): void {
     this.sfxVolume = Math.max(0, Math.min(1, volume));
-    console.log(`SFX volume set to: ${this.sfxVolume}`);
   }
 
   public toggleMusic(): void {
@@ -54,11 +36,6 @@ export class AudioSystem {
 
   public toggleSfx(): void {
     this.sfxEnabled = !this.sfxEnabled;
-  }
-
-  public preloadSounds(sounds: string[]): void {
-    console.log('Preloading sounds:', sounds);
-    // Mock implementation
   }
 }
 

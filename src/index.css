@@ -1,3 +1,26 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --font-cinzel: 'Cinzel', serif;
+  --font-cinzel-decorative: 'Cinzel Decorative', serif;
+
+  --color-medieval-primary: #533324;
+  --color-medieval-secondary: #b64362;
+  --color-medieval-accent: #84548c;
+  --color-medieval-gold: #d4af37;
+  --color-medieval-light-brown: #8b4513;
+  --color-medieval-dark-brown: #2f1b14;
+
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-pulse-slow: pulse 3s infinite;
+  --animate-reverse: reverse-spin 2s linear infinite;
+
+  @keyframes reverse-spin {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
+  }
+}

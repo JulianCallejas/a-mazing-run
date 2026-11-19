@@ -18,6 +18,16 @@ import {
   Timer, Trophy, Zap
 } from 'lucide-react';
 
+// Particle positions are generated once at module load so renders stay pure.
+const randomParticlePositions = (count: number): Array<[number, number, number]> =>
+  Array.from({ length: count }, () => [
+    (Math.random() - 0.5) * 60,
+    Math.random() * 20 + 10,
+    (Math.random() - 0.5) * 60,
+  ]);
+const SNOW_POSITIONS = randomParticlePositions(200);
+const RAIN_POSITIONS = randomParticlePositions(300);
+
 const GameScreen: React.FC = () => {
   const navigate = useNavigate();
   
@@ -47,7 +57,7 @@ const GameScreen: React.FC = () => {
   const [cameraRotation, setCameraRotation] = useState(0); // Camera rotation in radians
   const [cameraDistance, setCameraDistance] = useState(4); // Camera distance from player
   const gameStartTime = useRef<number>(0);
-  const animationFrame = useRef<number>();
+  const animationFrame = useRef<number | undefined>(undefined);
   const keysPressed = useRef(new Set<string>());
 
   // Find valid positions in maze
@@ -71,11 +81,9 @@ const GameScreen: React.FC = () => {
   // Initialize game when component mounts or game starts
   useEffect(() => {
     const initializeGame = () => {
-      console.log('Initializing game...', { gameStatus });
       
       // Load maze
       const mazeData = getDefaultMaze();
-      console.log('Maze data loaded:', mazeData.length, 'x', mazeData[0]?.length);
       setMaze(mazeData);
       
       // Find start position
@@ -88,7 +96,6 @@ const GameScreen: React.FC = () => {
           }
         }
       }
-      console.log('Start position:', startPos);
       
       updatePlayerPosition({ x: startPos.x, z: startPos.y });
       
@@ -135,7 +142,6 @@ const GameScreen: React.FC = () => {
       
       gameStartTime.current = Date.now();
       setLoading(false);
-      console.log('Game initialization complete');
     };
 
     // Always initialize game when component mounts or game status changes
@@ -256,7 +262,7 @@ const GameScreen: React.FC = () => {
     } else {
       audioSystem.playSoundEffect('wall-hit', 0.5);
     }
-  }, [gameStatus, playerPosition, cameraMode, maze, cameraRotation, handleWin, toggleCameraMode, updatePlayerPosition, gameTime, difficulty, visualEffect, endGame]);
+  }, [gameStatus, playerPosition, cameraMode, maze, cameraRotation, handleWin, toggleCameraMode, updatePlayerPosition]);
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     keysPressed.current.delete(event.code);
@@ -299,8 +305,8 @@ const GameScreen: React.FC = () => {
 
   // Render maze walls
   const renderMaze = () => {
-    const walls: JSX.Element[] = [];
-    const floors: JSX.Element[] = [];
+    const walls: React.JSX.Element[] = [];
+    const floors: React.JSX.Element[] = [];
 
     maze.forEach((row, y) => {
       row.forEach((cell, x) => {
@@ -360,15 +366,11 @@ const GameScreen: React.FC = () => {
     } else if (effectType === 'SNOW') {
       // Snow particles effect
       const snowParticles = [];
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < SNOW_POSITIONS.length; i++) {
         snowParticles.push(
           <mesh 
             key={`snow-${i}`} 
-            position={[
-              (Math.random() - 0.5) * 60,
-              Math.random() * 20 + 10,
-              (Math.random() - 0.5) * 60
-            ]}
+            position={SNOW_POSITIONS[i]}
           >
             <sphereGeometry args={[0.02]} />
             <meshBasicMaterial color="#FFFFFF" transparent opacity={0.8} />
@@ -384,15 +386,11 @@ const GameScreen: React.FC = () => {
     } else if (effectType === 'RAIN') {
       // Rain effect with darker atmosphere
       const rainDrops = [];
-      for (let i = 0; i < 300; i++) {
+      for (let i = 0; i < RAIN_POSITIONS.length; i++) {
         rainDrops.push(
           <mesh 
             key={`rain-${i}`} 
-            position={[
-              (Math.random() - 0.5) * 60,
-              Math.random() * 20 + 10,
-              (Math.random() - 0.5) * 60
-            ]}
+            position={RAIN_POSITIONS[i]}
             rotation={[0, 0, Math.PI / 6]}
           >
             <cylinderGeometry args={[0.005, 0.005, 0.3]} />
@@ -428,7 +426,6 @@ const GameScreen: React.FC = () => {
     }
   };
 
-  console.log('GameScreen render:', { isLoading, gameStatus, mazeLength: maze.length });
   
   if (isLoading) {
     return <LoadingSpinner />;
