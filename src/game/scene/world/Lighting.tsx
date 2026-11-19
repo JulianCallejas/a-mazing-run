@@ -1,25 +1,31 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { PMREMGenerator, type DirectionalLight, type HemisphereLight } from 'three';
+import { MathUtils, PMREMGenerator, type DirectionalLight, type HemisphereLight } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { Maze } from '../../core/maze';
 import { MOON_DIRECTION, type Atmosphere } from '../../art/atmosphere';
+import type { CameraMode } from '../../core/controls';
+
+/** Extra exposure in the aerial (map) view so routes stay readable in any weather. */
+const AERIAL_EXPOSURE_BOOST = 0.55;
 
 interface LightingProps {
   maze: Maze;
   atmosphere: Atmosphere;
+  cameraMode?: CameraMode;
 }
 
 /**
  * Moonlight key (the only shadow caster, fitted to the maze), hemisphere
- * fill, a dim neutral environment for metal reads, exposure per atmosphere,
- * and optional lightning flashes.
+ * fill, a dim neutral environment for metal reads, exposure per atmosphere
+ * (boosted in the aerial map view), and optional lightning flashes.
  */
-const Lighting = ({ maze, atmosphere }: LightingProps) => {
+const Lighting = ({ maze, atmosphere, cameraMode = 'third-person' }: LightingProps) => {
   const get = useThree((s) => s.get);
   const moonRef = useRef<DirectionalLight>(null);
   const hemiRef = useRef<HemisphereLight>(null);
   const lightning = useRef({ next: 6, flashUntil: 0 });
+  const aerialBlend = useRef(cameraMode === 'aerial' ? 1 : 0);
 
   const cx = (maze.width - 1) / 2;
   const cz = (maze.height - 1) / 2;
@@ -28,7 +34,6 @@ const Lighting = ({ maze, atmosphere }: LightingProps) => {
 
   useLayoutEffect(() => {
     const { gl, scene } = get();
-    gl.toneMappingExposure = atmosphere.exposure;
     const pmrem = new PMREMGenerator(gl);
     const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = environment;
@@ -45,9 +50,12 @@ const Lighting = ({ maze, atmosphere }: LightingProps) => {
       environment.dispose();
       if (moon) scene.remove(moon.target);
     };
-  }, [get, atmosphere.exposure, cx, cz]);
+  }, [get, cx, cz]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, gl }, delta) => {
+    aerialBlend.current = MathUtils.damp(aerialBlend.current, cameraMode === 'aerial' ? 1 : 0, 4.5, Math.min(delta, 0.1));
+    gl.toneMappingExposure = atmosphere.exposure * (1 + AERIAL_EXPOSURE_BOOST * aerialBlend.current);
+
     if (!atmosphere.lightning || !hemiRef.current) return;
     const t = clock.elapsedTime;
     const state = lightning.current;

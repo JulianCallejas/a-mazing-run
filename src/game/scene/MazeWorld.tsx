@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { GameEngine } from '../core/engine';
 import { dressMaze } from '../core/dressing';
 import type { VisualEffect } from '../core/scoring';
+import type { CameraMode } from '../core/controls';
 import { ATMOSPHERES, MOON_DIRECTION } from '../art/atmosphere';
 import MazeArchitecture from './world/MazeArchitecture';
 import Torches from './world/Torches';
@@ -15,10 +16,11 @@ import Perimeter from './world/Perimeter';
 interface MazeWorldProps {
   engine: GameEngine;
   effect: VisualEffect;
+  cameraMode: CameraMode;
 }
 
 /** The medieval maze world: architecture, props, lights, sky, weather and post. */
-const MazeWorld = ({ engine, effect }: MazeWorldProps) => {
+const MazeWorld = ({ engine, effect, cameraMode }: MazeWorldProps) => {
   const { maze } = engine;
   const atmosphere = ATMOSPHERES[effect];
   const dressing = useMemo(() => dressMaze(maze), [maze]);
@@ -28,7 +30,7 @@ const MazeWorld = ({ engine, effect }: MazeWorldProps) => {
     <>
       <color attach="background" args={[atmosphere.sky.zenith]} />
       <fog attach="fog" args={[atmosphere.fog.color, atmosphere.fog.near, atmosphere.fog.far]} />
-      <Lighting maze={maze} atmosphere={atmosphere} />
+      <Lighting maze={maze} atmosphere={atmosphere} cameraMode={cameraMode} />
       <SkyAndHorizon
         center={center}
         mazeSize={Math.max(maze.width, maze.height)}

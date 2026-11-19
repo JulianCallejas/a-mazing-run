@@ -4,6 +4,8 @@ import HomeScreen from './ui/screens/HomeScreen';
 import InstructionsScreen from './ui/screens/InstructionsScreen';
 import AboutScreen from './ui/screens/AboutScreen';
 import GameScreen from './ui/screens/GameScreen';
+import ShowcaseScreen from './ui/screens/ShowcaseScreen';
+import { diagnosticsEnabled } from './game/scene/diagnostics';
 
 const App: React.FC = () => {
   return (
@@ -14,6 +16,7 @@ const App: React.FC = () => {
           <Route path="/instructions" element={<InstructionsScreen />} />
           <Route path="/about" element={<AboutScreen />} />
           <Route path="/game" element={<GameScreen />} />
+          {diagnosticsEnabled() && <Route path="/showcase" element={<ShowcaseScreen />} />}
         </Routes>
       </div>
     </Router>

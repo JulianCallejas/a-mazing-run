@@ -101,6 +101,8 @@ const GameScreen: React.FC = () => {
   });
 
   const handleRestart = () => {
+    // Reset the HUD timer immediately; the next frame of the new run may take a moment.
+    if (timeLabel.current) timeLabel.current.textContent = formatTime(0);
     setRun(createRun(difficulty));
     setStatus('ready');
     setResult(null);
@@ -222,11 +224,11 @@ const GameScreen: React.FC = () => {
       <Canvas shadows="soft" dpr={[1, 2]} camera={{ fov: 68, near: 0.05, far: 320 }}>
         <GameLoop engine={engine} onEvents={handleEvents} onFrame={handleFrame} />
         <CameraRig key={run.id} engine={engine} mode={cameraMode} rig={rig} />
-        <MazeWorld engine={engine} effect={visualEffect} />
+        <MazeWorld engine={engine} effect={visualEffect} cameraMode={cameraMode} />
         {showDiagnostics && <RenderDiagnosticsProbe />}
         <PlayerAvatar actor={engine.player} />
         {engine.enemies.map((enemy) => (
-          <GuardianAvatar key={enemy.id} actor={enemy} />
+          <GuardianAvatar key={enemy.id} actor={enemy} target={engine.player} />
         ))}
       </Canvas>
     </div>
