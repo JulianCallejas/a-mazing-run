@@ -13,6 +13,10 @@ export interface RenderDiagnostics {
 declare global {
   interface Window {
     __mazeDiagnostics?: RenderDiagnostics;
+    /** Debug-only (?debug): live engine for QA bots. Never set in normal play. */
+    __mazeEngine?: unknown;
+    /** Debug-only (?debug): audio system for QA. */
+    __mazeAudio?: unknown;
   }
 }
 

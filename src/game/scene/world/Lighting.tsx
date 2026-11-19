@@ -5,6 +5,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import type { Maze } from '../../core/maze';
 import { MOON_DIRECTION, type Atmosphere } from '../../art/atmosphere';
 import type { CameraMode } from '../../core/controls';
+import { audioSystem } from '../../../systems/AudioSystem';
 
 /** Extra exposure in the aerial (map) view so routes stay readable in any weather. */
 const AERIAL_EXPOSURE_BOOST = 0.55;
@@ -24,7 +25,7 @@ const Lighting = ({ maze, atmosphere, cameraMode = 'third-person' }: LightingPro
   const get = useThree((s) => s.get);
   const moonRef = useRef<DirectionalLight>(null);
   const hemiRef = useRef<HemisphereLight>(null);
-  const lightning = useRef({ next: 6, flashUntil: 0 });
+  const lightning = useRef({ next: 6, flashUntil: 0, thunderAt: Infinity });
   const aerialBlend = useRef(cameraMode === 'aerial' ? 1 : 0);
 
   const cx = (maze.width - 1) / 2;
@@ -61,7 +62,13 @@ const Lighting = ({ maze, atmosphere, cameraMode = 'third-person' }: LightingPro
     const state = lightning.current;
     if (t >= state.next) {
       state.flashUntil = t + 0.35;
+      // Thunder follows the flash after a short, distance-like delay.
+      state.thunderAt = t + 0.4 + Math.random() * 0.8;
       state.next = t + 7 + ((Math.sin(t * 12.9898) * 43758.5453) % 1 + 1) * 5;
+    }
+    if (t >= state.thunderAt) {
+      state.thunderAt = Infinity;
+      audioSystem.playSoundEffect('thunder', 0.9);
     }
     const flashing = t < state.flashUntil;
     // Double-strobe envelope.
