@@ -1,435 +1,122 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import * as THREE from 'three';
+import React, { useCallback, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
+import { Pause, Play, Camera, Home, RotateCcw, Timer, Trophy, Zap } from 'lucide-react';
 import useGameStore from '../../store/useGameStore';
-import { Cell, generateMaze } from '../../game/core/maze';
-import { highScores } from '../../game/core/highScores';
-import { formatTime } from '../../game/core/scoring';
-import { GAME_CONFIG, KEYS } from '../../utils/constants';
+import { GAME_CONFIG } from '../../utils/constants';
 import { audioSystem } from '../../systems/AudioSystem';
-import Player from '../../entities/Player';
-import Enemy from '../../entities/Enemy';
+import { createGameEngine, DIRECTION_VECTORS, type GameEvent, type GameStatus } from '../../game/core/engine';
+import { generateMaze, isWalkable, type Maze } from '../../game/core/maze';
+import { formatTime, type Difficulty } from '../../game/core/scoring';
+import { highScores, type ScoreEntry } from '../../game/core/highScores';
+import GameLoop from '../../game/scene/GameLoop';
+import CameraRig, { type CameraRigState } from '../../game/scene/CameraRig';
+import MazeWorld from '../../game/scene/MazeWorld';
+import { GuardianAvatar, PlayerAvatar } from '../../game/scene/Avatars';
+import { useGameInput } from '../../game/scene/useGameInput';
 import MedievalButton from '../components/MedievalButton';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { 
-  Pause, Play, Camera, Home, RotateCcw, 
-  Timer, Trophy, Zap
-} from 'lucide-react';
 
-// Particle positions are generated once at module load so renders stay pure.
-const randomParticlePositions = (count: number): Array<[number, number, number]> =>
-  Array.from({ length: count }, () => [
-    (Math.random() - 0.5) * 60,
-    Math.random() * 20 + 10,
-    (Math.random() - 0.5) * 60,
-  ]);
-const SNOW_POSITIONS = randomParticlePositions(200);
-const RAIN_POSITIONS = randomParticlePositions(300);
+/** Faces the camera down the first open corridor from the start cell. */
+const initialYawIndex = (maze: Maze): number => {
+  const order = ['north', 'east', 'south', 'west'] as const;
+  const index = order.findIndex((d) => {
+    const v = DIRECTION_VECTORS[d];
+    return isWalkable(maze.grid, maze.start.x + v.x, maze.start.z + v.z);
+  });
+  return Math.max(0, index);
+};
+
+let runCounter = 0;
+
+const createRun = (difficulty: Difficulty) => {
+  const size = GAME_CONFIG.DIFFICULTY[difficulty].mazeSize;
+  const maze = generateMaze({ width: size, height: size });
+  const rig: CameraRigState = { yawIndex: initialYawIndex(maze), zoom: 3.5 };
+  return { id: ++runCounter, engine: createGameEngine({ maze, difficulty }), rig };
+};
 
 const GameScreen: React.FC = () => {
   const navigate = useNavigate();
-  
-  // Game state - use direct selectors to avoid caching issues
-  const gameStatus = useGameStore(state => state.gameStatus);
-  const playerPosition = useGameStore(state => state.playerPosition);
-  const cameraMode = useGameStore(state => state.cameraMode);
-  const difficulty = useGameStore(state => state.difficulty);
-  const visualEffect = useGameStore(state => state.visualEffect);
-  const enemies = useGameStore(state => state.enemies);
-  const isLoading = useGameStore(state => state.isLoading);
-  const score = useGameStore(state => state.score);
-  const time = useGameStore(state => state.time);
-  
-  // Actions
-  const pauseGame = useGameStore(state => state.pauseGame);
-  const resumeGame = useGameStore(state => state.resumeGame);
-  const endGame = useGameStore(state => state.endGame);
-  const resetGame = useGameStore(state => state.resetGame);
-  const startGame = useGameStore(state => state.startGame);
-  const setLoading = useGameStore(state => state.setLoading);
-  const updatePlayerPosition = useGameStore(state => state.updatePlayerPosition);
-  const toggleCameraMode = useGameStore(state => state.toggleCameraMode);
-  const updateEnemies = useGameStore(state => state.updateEnemies);
-  const [maze, setMaze] = useState<number[][]>([]);
-  const [gameTime, setGameTime] = useState(0);
-  const [cameraRotation, setCameraRotation] = useState(0); // Camera rotation in radians
-  const [cameraDistance, setCameraDistance] = useState(4); // Camera distance from player
-  const gameStartTime = useRef<number>(0);
-  const animationFrame = useRef<number | undefined>(undefined);
-  const keysPressed = useRef(new Set<string>());
+  const difficulty = useGameStore((s) => s.difficulty);
+  const visualEffect = useGameStore((s) => s.visualEffect);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+  const toggleCameraMode = useGameStore((s) => s.toggleCameraMode);
 
-  // Find valid positions in maze
-  const findValidPositions = (mazeData: number[][]) => {
-    const positions: Array<{ x: number, y: number }> = [];
-    for (let y = 0; y < mazeData.length; y++) {
-      for (let x = 0; x < mazeData[y].length; x++) {
-        if (mazeData[y][x] === Cell.Path || mazeData[y][x] === Cell.Start) {
-          positions.push({ x, y });
+  const [run, setRun] = useState(() => createRun(difficulty));
+  const [status, setStatus] = useState<GameStatus>('ready');
+  const [result, setResult] = useState<ScoreEntry | null>(null);
+  const timeLabel = useRef<HTMLSpanElement>(null);
+  const { engine, rig } = run;
+
+  const syncStatus = useCallback(() => setStatus(engine.status), [engine]);
+
+  const togglePause = useCallback(() => {
+    if (engine.status === 'playing') engine.pause();
+    else if (engine.status === 'paused') engine.resume();
+    setStatus(engine.status);
+  }, [engine]);
+
+  const handleEvents = useCallback(
+    (events: GameEvent[]) => {
+      for (const event of events) {
+        switch (event.type) {
+          case 'step':
+            audioSystem.playSoundEffect('step', 0.3);
+            break;
+          case 'bump':
+            audioSystem.playSoundEffect('wall-hit', 0.5);
+            break;
+          case 'won':
+            setResult(highScores.saveScore({ time: event.time, difficulty, visualEffect }));
+            setStatus('won');
+            audioSystem.playSoundEffect('victory', 0.8);
+            break;
+          case 'lost':
+            setStatus('lost');
+            audioSystem.playSoundEffect('defeat', 0.8);
+            break;
         }
       }
-    }
-    return positions;
-  };
+    },
+    [difficulty, visualEffect],
+  );
 
-  // Calculate distance between two points
-  const calculateDistance = (pos1: { x: number, y: number }, pos2: { x: number, y: number }) => {
-    return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
-  };
-
-  // Initialize game when component mounts or game starts
-  useEffect(() => {
-    const initializeGame = () => {
-      
-      // Load maze
-      const mazeSize = GAME_CONFIG.DIFFICULTY[difficulty].mazeSize;
-      const generated = generateMaze({ width: mazeSize, height: mazeSize });
-      const mazeData = generated.grid;
-      setMaze(mazeData);
-
-      const startPos = { x: generated.start.x, y: generated.start.z };
-      
-      updatePlayerPosition({ x: startPos.x, z: startPos.y });
-      
-      // Find valid positions for enemies
-      const validPositions = findValidPositions(mazeData);
-      const mazeWidth = mazeData[0].length;
-      const mazeHeight = mazeData.length;
-      const minDistance = Math.max(mazeWidth, mazeHeight) * 0.3; // 30% of maze size
-      
-      // Filter positions that are far enough from start
-      const farPositions = validPositions.filter(pos => 
-        calculateDistance(pos, startPos) >= minDistance
-      );
-      
-      // Initialize enemies at random far positions
-      const enemyPositions = [];
-      const difficultyConfig = GAME_CONFIG.DIFFICULTY[difficulty];
-      const availablePositions = [...farPositions];
-      
-      for (let i = 0; i < difficultyConfig.enemyCount && availablePositions.length > 0; i++) {
-        const randomIndex = Math.floor(Math.random() * availablePositions.length);
-        const enemyPos = availablePositions.splice(randomIndex, 1)[0];
-        enemyPositions.push(enemyPos);
-      }
-      
-      // Fallback if no far positions available
-      if (enemyPositions.length === 0 && validPositions.length > 1) {
-        const fallbackPos = validPositions[Math.floor(Math.random() * validPositions.length)];
-        if (fallbackPos.x !== startPos.x || fallbackPos.y !== startPos.y) {
-          enemyPositions.push(fallbackPos);
-        }
-      }
-      
-      const enemiesData = enemyPositions.map((pos, index) => ({
-        id: `enemy-${index}`,
-        position: { x: pos.x, z: pos.y },
-        speed: difficultyConfig.speedMultiplier,
-        isActive: true
-      }));
-      updateEnemies(enemiesData);
-      
-      // Start background music
-      audioSystem.playBackgroundMusic();
-      
-      gameStartTime.current = Date.now();
-      setLoading(false);
-    };
-
-    // Always initialize game when component mounts or game status changes
-    initializeGame();
-
-    return () => {
-      if (animationFrame.current) {
-        cancelAnimationFrame(animationFrame.current);
-      }
-      audioSystem.stopBackgroundMusic();
-    };
-  }, [gameStatus, difficulty, setLoading, updateEnemies, updatePlayerPosition]);
-
-  // Game time tracking - only update local state, not Zustand store during gameplay
-  useEffect(() => {
-    if (gameStatus === 'playing') {
-      const updateGameTime = () => {
-        const elapsed = (Date.now() - gameStartTime.current) / 1000;
-        setGameTime(elapsed);
-        animationFrame.current = requestAnimationFrame(updateGameTime);
-      };
-      animationFrame.current = requestAnimationFrame(updateGameTime);
-    }
-
-    return () => {
-      if (animationFrame.current) {
-        cancelAnimationFrame(animationFrame.current);
-      }
-    };
-  }, [gameStatus]);
-
-  // Mouse wheel zoom control
-  const handleWheel = useCallback((event: WheelEvent) => {
-    if (cameraMode === 'third-person') {
-      event.preventDefault();
-      const delta = event.deltaY > 0 ? 0.5 : -0.5;
-      setCameraDistance(prev => Math.max(2, Math.min(8, prev + delta)));
-    }
-  }, [cameraMode]);
-
-  useEffect(() => {
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, [handleWheel]);
-
-  // Win condition handler
-  const handleWin = useCallback(() => {
-    // Guard against a zero timer on the very first frame; the score formula divides by time.
-    const finalTime = Math.max(gameTime, 0.1);
-    const finalScore = highScores.saveScore({ time: finalTime, difficulty, visualEffect });
-    
-    endGame('won', finalScore.score, finalTime);
-    audioSystem.playSoundEffect('victory', 0.8);
-  }, [gameTime, difficulty, visualEffect, endGame]);
-
-  // Keyboard controls
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (gameStatus !== 'playing') return;
-
-    keysPressed.current.add(event.code);
-    
-    let newX = playerPosition.x;
-    let newY = playerPosition.z; // Note: using z from store
-
-    if (cameraMode === 'third-person') {
-      // Third-person camera controls
-      if (event.code === KEYS.ARROW_LEFT) {
-        // Rotate camera left (90 degrees)
-        setCameraRotation(prev => prev + Math.PI / 2);
-        return;
-      } else if (event.code === KEYS.ARROW_RIGHT) {
-        // Rotate camera right (90 degrees)
-        setCameraRotation(prev => prev - Math.PI / 2);
-        return;
-      } else if (event.code === KEYS.ARROW_UP || event.code === KEYS.W) {
-        // Move forward in camera direction
-        const moveX = Math.round(Math.sin(cameraRotation));
-        const moveY = Math.round(-Math.cos(cameraRotation));
-        newX += moveX;
-        newY += moveY;
-      } else if (event.code === KEYS.ARROW_DOWN || event.code === KEYS.S) {
-        // Move backward from camera direction
-        const moveX = Math.round(-Math.sin(cameraRotation));
-        const moveY = Math.round(Math.cos(cameraRotation));
-        newX += moveX;
-        newY += moveY;
-      }
-    } else {
-      // Aerial view - traditional WASD/Arrow controls
-      if (event.code === KEYS.W || event.code === KEYS.ARROW_UP) {
-        newY = Math.max(0, newY - 1);
-      } else if (event.code === KEYS.S || event.code === KEYS.ARROW_DOWN) {
-        newY = Math.min(maze.length - 1, newY + 1);
-      } else if (event.code === KEYS.A || event.code === KEYS.ARROW_LEFT) {
-        newX = Math.max(0, newX - 1);
-      } else if (event.code === KEYS.D || event.code === KEYS.ARROW_RIGHT) {
-        newX = Math.min(maze[0]?.length - 1 || 0, newX + 1);
-      }
-    }
-
-    if (event.code === KEYS.C) {
-      toggleCameraMode();
-      return;
-    }
-
-    // Check for wall collision
-    if (maze[newY] && maze[newY][newX] !== Cell.Wall) {
-      updatePlayerPosition({ x: newX, z: newY }); // Note: y -> z mapping
-      audioSystem.playSoundEffect('step', 0.3);
-
-      // Check for win condition
-      if (maze[newY][newX] === Cell.Exit) {
-        handleWin();
-      }
-    } else {
-      audioSystem.playSoundEffect('wall-hit', 0.5);
-    }
-  }, [gameStatus, playerPosition, cameraMode, maze, cameraRotation, handleWin, toggleCameraMode, updatePlayerPosition]);
-
-  const handleKeyUp = useCallback((event: KeyboardEvent) => {
-    keysPressed.current.delete(event.code);
+  const handleFrame = useCallback((elapsed: number) => {
+    const label = timeLabel.current;
+    if (!label) return;
+    const text = formatTime(elapsed);
+    if (label.textContent !== text) label.textContent = text;
   }, []);
 
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [handleKeyDown, handleKeyUp]);
-
-
-  const handleLose = () => {
-    endGame('lost');
-    audioSystem.playSoundEffect('defeat', 0.8);
-  };
-
-  const handlePause = () => {
-    if (gameStatus === 'playing') {
-      pauseGame();
-    } else if (gameStatus === 'paused') {
-      resumeGame();
-      gameStartTime.current = Date.now() - gameTime * 1000;
-    }
-  };
+  useGameInput({
+    engine,
+    mode: cameraMode,
+    rig,
+    onStatusChange: syncStatus,
+    onToggleCamera: toggleCameraMode,
+    onTogglePause: togglePause,
+  });
 
   const handleRestart = () => {
-    resetGame();
-    startGame();
+    setRun(createRun(difficulty));
+    setStatus('ready');
+    setResult(null);
   };
 
-  const handleExit = () => {
-    resetGame();
-    navigate('/');
-  };
+  const handleExit = () => navigate('/');
 
-  // Render maze walls
-  const renderMaze = () => {
-    const walls: React.JSX.Element[] = [];
-    const floors: React.JSX.Element[] = [];
-
-    maze.forEach((row, y) => {
-      row.forEach((cell, x) => {
-        // Floor for all non-wall cells
-        if (cell !== Cell.Wall) {
-          floors.push(
-            <mesh key={`floor-${x}-${y}`} position={[x, -0.5, y]} receiveShadow>
-              <boxGeometry args={[1, 0.1, 1]} />
-              <meshStandardMaterial 
-                color="#8B4513" 
-                roughness={0.8}
-                metalness={0.1}
-              />
-            </mesh>
-          );
-        }
-
-        // Walls
-        if (cell === Cell.Wall) {
-          walls.push(
-            <mesh key={`wall-${x}-${y}`} position={[x, 1, y]} castShadow receiveShadow>
-              <boxGeometry args={[1, 2, 1]} />
-              <meshStandardMaterial 
-                color="#555555" 
-                roughness={0.9}
-                metalness={0.1}
-              />
-            </mesh>
-          );
-        }
-
-        // Exit marker
-        if (cell === Cell.Exit) {
-          floors.push(
-            <mesh key={`exit-${x}-${y}`} position={[x, 0.1, y]}>
-              <cylinderGeometry args={[0.4, 0.4, 0.2]} />
-              <meshStandardMaterial 
-                color="#FFD700" 
-                emissive="#FFAA00"
-                emissiveIntensity={0.3}
-              />
-            </mesh>
-          );
-        }
-      });
-    });
-
-    return [...floors, ...walls];
-  };
-
-  // Visual effects
-  const renderEffects = () => {
-    const effectType = visualEffect;
-    
-    if (effectType === 'FOG') {
-      return <fog attach="fog" args={['#666666', 8, 25]} />;
-    } else if (effectType === 'SNOW') {
-      // Snow particles effect
-      const snowParticles = [];
-      for (let i = 0; i < SNOW_POSITIONS.length; i++) {
-        snowParticles.push(
-          <mesh 
-            key={`snow-${i}`} 
-            position={SNOW_POSITIONS[i]}
-          >
-            <sphereGeometry args={[0.02]} />
-            <meshBasicMaterial color="#FFFFFF" transparent opacity={0.8} />
-          </mesh>
-        );
-      }
-      return (
-        <>
-          <fog attach="fog" args={['#E6F3FF', 10, 30]} />
-          {snowParticles}
-        </>
-      );
-    } else if (effectType === 'RAIN') {
-      // Rain effect with darker atmosphere
-      const rainDrops = [];
-      for (let i = 0; i < RAIN_POSITIONS.length; i++) {
-        rainDrops.push(
-          <mesh 
-            key={`rain-${i}`} 
-            position={RAIN_POSITIONS[i]}
-            rotation={[0, 0, Math.PI / 6]}
-          >
-            <cylinderGeometry args={[0.005, 0.005, 0.3]} />
-            <meshBasicMaterial color="#87CEEB" transparent opacity={0.6} />
-          </mesh>
-        );
-      }
-      return (
-        <>
-          <fog attach="fog" args={['#4A5568', 6, 20]} />
-          {rainDrops}
-        </>
-      );
-    }
-    
-    return null;
-  };
-
-  // Calculate camera position based on mode and rotation
-  const getCameraPosition = () => {
-    const playerX = playerPosition.x;
-    const playerY = playerPosition.z; // Note: using z from store
-    
-    if (cameraMode === 'aerial') {
-      return new THREE.Vector3(playerX, 20, playerY + 5);
-    } else {
-      // Third-person camera with rotation and zoom
-      const height = 2.5;
-      const cameraX = playerX + Math.sin(cameraRotation) * cameraDistance;
-      const cameraZ = playerY + Math.cos(cameraRotation) * cameraDistance;
-      
-      return new THREE.Vector3(cameraX, height, cameraZ);
-    }
-  };
-
-  
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
+  const finished = status === 'won' || status === 'lost';
 
   return (
     <div className="w-full h-screen relative bg-gray-900">
       {/* Game UI Overlay */}
       <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start">
-        {/* Game Stats */}
         <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 text-white space-y-2">
           <div className="flex items-center">
             <Timer className="w-4 h-4 mr-2" />
-            <span className="font-cinzel">Time: {formatTime(gameTime)}</span>
+            <span className="font-cinzel">
+              Time: <span ref={timeLabel}>0:00</span>
+            </span>
           </div>
           <div className="flex items-center">
             <Trophy className="w-4 h-4 mr-2" />
@@ -441,79 +128,71 @@ const GameScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Game Controls */}
         <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 space-y-2">
           <div className="flex space-x-2">
             <MedievalButton
-              onClick={handlePause}
+              onClick={togglePause}
               variant="secondary"
               size="sm"
-              disabled={gameStatus === 'won' || gameStatus === 'lost'}
+              disabled={finished || status === 'ready'}
             >
-              {gameStatus === 'paused' ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+              {status === 'paused' ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
             </MedievalButton>
-            
-            <MedievalButton
-              onClick={toggleCameraMode}
-              variant="secondary"
-              size="sm"
-            >
+            <MedievalButton onClick={toggleCameraMode} variant="secondary" size="sm">
               <Camera className="w-4 h-4" />
             </MedievalButton>
-            
-            <MedievalButton
-              onClick={handleRestart}
-              variant="secondary"
-              size="sm"
-            >
+            <MedievalButton onClick={handleRestart} variant="secondary" size="sm">
               <RotateCcw className="w-4 h-4" />
             </MedievalButton>
-            
-            <MedievalButton
-              onClick={handleExit}
-              variant="danger"
-              size="sm"
-            >
+            <MedievalButton onClick={handleExit} variant="danger" size="sm">
               <Home className="w-4 h-4" />
             </MedievalButton>
           </div>
         </div>
       </div>
 
-      {/* Controls Help */}
-      {cameraMode === 'third-person' && (
-        <div className="absolute bottom-4 left-4 z-10 bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white text-sm">
-          <div className="font-cinzel space-y-1">
-            <div>↑/W: Move Forward</div>
-            <div>↓/S: Move Backward</div>
-            <div>←/→: Rotate Camera</div>
-            <div>Mouse Wheel: Zoom</div>
-            <div>C: Toggle Camera</div>
+      {status === 'ready' && (
+        <div className="absolute inset-x-0 top-1/3 z-10 flex justify-center pointer-events-none">
+          <div className="bg-black/60 rounded-lg px-6 py-3 text-amber-100 font-cinzel text-lg">
+            Move to begin your escape
           </div>
         </div>
       )}
 
-      {/* Game Over Overlays */}
-      {(gameStatus === 'won' || gameStatus === 'lost') && (
+      {/* Controls Help */}
+      <div className="absolute bottom-4 left-4 z-10 bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white text-sm">
+        <div className="font-cinzel space-y-1">
+          {cameraMode === 'third-person' ? (
+            <>
+              <div>W / ↑: Forward · S / ↓: Back</div>
+              <div>A / ← · D / →: Turn</div>
+              <div>Mouse wheel: Zoom</div>
+            </>
+          ) : (
+            <div>WASD / Arrows: Move (north is up)</div>
+          )}
+          <div>C: Camera · Esc / P: Pause</div>
+        </div>
+      </div>
+
+      {finished && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-20 flex items-center justify-center">
           <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-4 border-amber-900 rounded-xl p-8 text-center max-w-md">
             <h2 className="font-cinzel-decorative text-3xl font-bold text-amber-900 mb-4">
-              {gameStatus === 'won' ? 'Quest Complete!' : 'Quest Failed!'}
+              {status === 'won' ? 'Quest Complete!' : 'Quest Failed!'}
             </h2>
-            
-            {gameStatus === 'won' && (
+            {status === 'won' && result && (
               <div className="space-y-2 mb-6">
                 <div className="flex items-center justify-center text-amber-800">
                   <Trophy className="w-5 h-5 mr-2" />
-                  <span className="font-cinzel font-semibold">Score: {score}</span>
+                  <span className="font-cinzel font-semibold">Score: {result.score}</span>
                 </div>
                 <div className="flex items-center justify-center text-amber-800">
                   <Timer className="w-5 h-5 mr-2" />
-                  <span className="font-cinzel">Time: {formatTime(time)}</span>
+                  <span className="font-cinzel">Time: {formatTime(result.time)}</span>
                 </div>
               </div>
             )}
-            
             <div className="space-y-3">
               <MedievalButton onClick={handleRestart} variant="primary" size="md" className="w-full">
                 Try Again
@@ -526,68 +205,24 @@ const GameScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Pause Overlay */}
-      {gameStatus === 'paused' && (
+      {status === 'paused' && (
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-20 flex items-center justify-center">
           <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-4 border-amber-900 rounded-xl p-8 text-center">
-            <h2 className="font-cinzel-decorative text-2xl font-bold text-amber-900 mb-4">
-              Quest Paused
-            </h2>
-            <MedievalButton onClick={handlePause} variant="primary" size="lg">
+            <h2 className="font-cinzel-decorative text-2xl font-bold text-amber-900 mb-4">Quest Paused</h2>
+            <MedievalButton onClick={togglePause} variant="primary" size="lg">
               Resume Quest
             </MedievalButton>
           </div>
         </div>
       )}
 
-      {/* 3D Game World */}
-      <Canvas shadows camera={{ position: [0, 10, 0], fov: 75 }}>
-        {renderEffects()}
-        
-        {/* Lighting */}
-        <ambientLight intensity={visualEffect === 'RAIN' ? 0.2 : 0.4} />
-        <directionalLight
-          position={[10, 10, 5]}
-          intensity={visualEffect === 'RAIN' ? 0.5 : 0.8}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-        />
-        
-        {/* Environment */}
-        <Environment preset={visualEffect === 'RAIN' ? 'night' : 'sunset'} />
-        
-        {/* Camera Setup */}
-        <PerspectiveCamera
-          makeDefault
-          position={getCameraPosition()}
-          fov={cameraMode === 'aerial' ? 60 : 75}
-        />
-        
-        <OrbitControls
-          target={[playerPosition.x, 0, playerPosition.z]}
-          enablePan={false}
-          enableZoom={false}
-          enableRotate={cameraMode === 'aerial'}
-        />
-
-        {/* Game Objects */}
-        {renderMaze()}
-        
-        <Player 
-          position={[playerPosition.x, 0.5, playerPosition.z]}
-        />
-        
-        {enemies.map((enemy) => (
-          <Enemy
-            key={enemy.id}
-            position={[enemy.position.x, 0.5, enemy.position.z]}
-            playerPosition={{ x: playerPosition.x, y: playerPosition.z }}
-            maze={maze}
-            speed={enemy.speed}
-            onCatchPlayer={handleLose}
-            isPaused={gameStatus === 'paused'}
-          />
+      <Canvas shadows camera={{ fov: 68, near: 0.05, far: 200 }}>
+        <GameLoop engine={engine} onEvents={handleEvents} onFrame={handleFrame} />
+        <CameraRig key={run.id} engine={engine} mode={cameraMode} rig={rig} />
+        <MazeWorld grid={engine.maze.grid} effect={visualEffect} />
+        <PlayerAvatar actor={engine.player} />
+        {engine.enemies.map((enemy) => (
+          <GuardianAvatar key={enemy.id} actor={enemy} />
         ))}
       </Canvas>
     </div>

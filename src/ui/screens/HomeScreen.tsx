@@ -13,16 +13,13 @@ const HomeScreen: React.FC = () => {
   // Use direct selectors to avoid potential infinite loops
   const difficulty = useGameStore(state => state.difficulty);
   const visualEffect = useGameStore(state => state.visualEffect);
-  const startGame = useGameStore(state => state.startGame);
   const setDifficulty = useGameStore(state => state.setDifficulty);
   const setVisualEffect = useGameStore(state => state.setVisualEffect);
   
   const topScores = highScores.getTopScores().slice(0, 3);
 
   const handleStartGame = (): void => {
-    startGame();
-    // Use setTimeout to avoid potential race conditions
-    setTimeout(() => navigate('/game'), 0);
+    navigate('/game');
   };
 
   const handleDifficultyChange = (newDifficulty: keyof typeof GAME_CONFIG.DIFFICULTY): void => {
