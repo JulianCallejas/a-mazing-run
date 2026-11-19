@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import useGameStore from '../../store/useGameStore';
 import { GAME_CONFIG } from '../../utils/constants';
-import { ScoreManager } from '../../core/ScoreManager';
+import { highScores } from '../../game/core/highScores';
 import MedievalButton from '../components/MedievalButton';
 import MedievalPanel from '../components/MedievalPanel';
 import { Sword, Crown, Settings } from 'lucide-react';
@@ -17,7 +17,7 @@ const HomeScreen: React.FC = () => {
   const setDifficulty = useGameStore(state => state.setDifficulty);
   const setVisualEffect = useGameStore(state => state.setVisualEffect);
   
-  const topScores = ScoreManager.getTopScores().slice(0, 3);
+  const topScores = highScores.getTopScores().slice(0, 3);
 
   const handleStartGame = (): void => {
     startGame();

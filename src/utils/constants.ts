@@ -26,24 +26,28 @@ export const GAME_CONFIG = {
   DIFFICULTY: {
     EASY: {
       name: 'Easy',
+      mazeSize: 15,
       enemyCount: 1,
       speedMultiplier: 0.8,
       gracePeriod: 2000
     },
     MEDIUM: {
-      name: 'Medium', 
+      name: 'Medium',
+      mazeSize: 21,
       enemyCount: 1,
       speedMultiplier: 0.9,
       gracePeriod: 1500
     },
     HARD: {
       name: 'Hard',
+      mazeSize: 27,
       enemyCount: 2,
       speedMultiplier: 1.0,
       gracePeriod: 1000
     },
     VERY_HARD: {
       name: 'Very Hard',
+      mazeSize: 33,
       enemyCount: 2,
       speedMultiplier: 1.1,
       gracePeriod: 500
@@ -66,13 +70,6 @@ export const GAME_CONFIG = {
       VERY_HARD: 1.1
     }
   }
-};
-
-export const MAZE_CELLS = {
-  WALL: 1,
-  PATH: 0,
-  START: 2,
-  EXIT: 3
 };
 
 export const CAMERA_MODES = {

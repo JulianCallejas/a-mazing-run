@@ -4,10 +4,10 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
 import useGameStore from '../../store/useGameStore';
-import { getDefaultMaze } from '../../core/MazeGenerator';
-import { ScoreManager } from '../../core/ScoreManager';
-import { GAME_CONFIG, MAZE_CELLS, KEYS } from '../../utils/constants';
-import { formatTime } from '../../utils/helpers';
+import { Cell, generateMaze } from '../../game/core/maze';
+import { highScores } from '../../game/core/highScores';
+import { formatTime } from '../../game/core/scoring';
+import { GAME_CONFIG, KEYS } from '../../utils/constants';
 import { audioSystem } from '../../systems/AudioSystem';
 import Player from '../../entities/Player';
 import Enemy from '../../entities/Enemy';
@@ -65,7 +65,7 @@ const GameScreen: React.FC = () => {
     const positions: Array<{ x: number, y: number }> = [];
     for (let y = 0; y < mazeData.length; y++) {
       for (let x = 0; x < mazeData[y].length; x++) {
-        if (mazeData[y][x] === MAZE_CELLS.PATH || mazeData[y][x] === MAZE_CELLS.START) {
+        if (mazeData[y][x] === Cell.Path || mazeData[y][x] === Cell.Start) {
           positions.push({ x, y });
         }
       }
@@ -83,19 +83,12 @@ const GameScreen: React.FC = () => {
     const initializeGame = () => {
       
       // Load maze
-      const mazeData = getDefaultMaze();
+      const mazeSize = GAME_CONFIG.DIFFICULTY[difficulty].mazeSize;
+      const generated = generateMaze({ width: mazeSize, height: mazeSize });
+      const mazeData = generated.grid;
       setMaze(mazeData);
-      
-      // Find start position
-      let startPos = { x: 0, y: 15 };
-      for (let y = 0; y < mazeData.length; y++) {
-        for (let x = 0; x < mazeData[y].length; x++) {
-          if (mazeData[y][x] === MAZE_CELLS.START) {
-            startPos = { x, y };
-            break;
-          }
-        }
-      }
+
+      const startPos = { x: generated.start.x, y: generated.start.z };
       
       updatePlayerPosition({ x: startPos.x, z: startPos.y });
       
@@ -189,12 +182,9 @@ const GameScreen: React.FC = () => {
 
   // Win condition handler
   const handleWin = useCallback(() => {
-    const finalTime = gameTime; // Use the current game time
-    const finalScore = ScoreManager.saveScore(
-      finalTime,
-      difficulty,
-      visualEffect
-    );
+    // Guard against a zero timer on the very first frame; the score formula divides by time.
+    const finalTime = Math.max(gameTime, 0.1);
+    const finalScore = highScores.saveScore({ time: finalTime, difficulty, visualEffect });
     
     endGame('won', finalScore.score, finalTime);
     audioSystem.playSoundEffect('victory', 0.8);
@@ -251,12 +241,12 @@ const GameScreen: React.FC = () => {
     }
 
     // Check for wall collision
-    if (maze[newY] && maze[newY][newX] !== MAZE_CELLS.WALL) {
+    if (maze[newY] && maze[newY][newX] !== Cell.Wall) {
       updatePlayerPosition({ x: newX, z: newY }); // Note: y -> z mapping
       audioSystem.playSoundEffect('step', 0.3);
 
       // Check for win condition
-      if (maze[newY][newX] === MAZE_CELLS.EXIT) {
+      if (maze[newY][newX] === Cell.Exit) {
         handleWin();
       }
     } else {
@@ -311,7 +301,7 @@ const GameScreen: React.FC = () => {
     maze.forEach((row, y) => {
       row.forEach((cell, x) => {
         // Floor for all non-wall cells
-        if (cell !== MAZE_CELLS.WALL) {
+        if (cell !== Cell.Wall) {
           floors.push(
             <mesh key={`floor-${x}-${y}`} position={[x, -0.5, y]} receiveShadow>
               <boxGeometry args={[1, 0.1, 1]} />
@@ -325,7 +315,7 @@ const GameScreen: React.FC = () => {
         }
 
         // Walls
-        if (cell === MAZE_CELLS.WALL) {
+        if (cell === Cell.Wall) {
           walls.push(
             <mesh key={`wall-${x}-${y}`} position={[x, 1, y]} castShadow receiveShadow>
               <boxGeometry args={[1, 2, 1]} />
@@ -339,7 +329,7 @@ const GameScreen: React.FC = () => {
         }
 
         // Exit marker
-        if (cell === MAZE_CELLS.EXIT) {
+        if (cell === Cell.Exit) {
           floors.push(
             <mesh key={`exit-${x}-${y}`} position={[x, 0.1, y]}>
               <cylinderGeometry args={[0.4, 0.4, 0.2]} />

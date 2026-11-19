@@ -7,13 +7,6 @@ export interface Enemy {
   isActive: boolean;
 }
 
-export interface HighScore {
-  name: string;
-  score: number;
-  difficulty: string;
-  date: string;
-}
-
 export interface GameState {
   // Navigation & UI
   currentScreen: 'home' | 'instructions' | 'about' | 'game';
@@ -25,7 +18,6 @@ export interface GameState {
   visualEffect: keyof typeof GAME_CONFIG.VISUAL_EFFECTS;
   score: number;
   time: number;
-  highScores: HighScore[];
 
   // Player State
   playerPosition: { x: number; z: number };
@@ -58,7 +50,6 @@ export const initialGameState: GameState = {
   visualEffect: 'NONE',
   score: 0,
   time: 0,
-  highScores: [],
 
   // Player State
   playerPosition: { x: 0, z: 15 },

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { GameState, initialGameState, Enemy, HighScore } from './initialState';
+import { GameState, initialGameState, Enemy } from './initialState';
 import { GAME_CONFIG } from '../utils/constants';
 
 interface GameActions {
@@ -39,7 +39,6 @@ interface GameActions {
   updateScore: (points: number) => void;
   setScore: (score: number) => void;
   updateTime: (time: number) => void;
-  saveHighScore: (name: string) => void;
 
   // Settings
   toggleSound: () => void;
@@ -94,8 +93,7 @@ const useGameStore = create<GameState & GameActions>()(
             soundEnabled: state.soundEnabled,
             musicEnabled: state.musicEnabled,
             soundVolume: state.soundVolume,
-            musicVolume: state.musicVolume,
-            highScores: state.highScores
+            musicVolume: state.musicVolume
           }, false, 'resetGame');
         },
 
@@ -173,21 +171,6 @@ const useGameStore = create<GameState & GameActions>()(
         setScore: (score) => set({ score }, false, 'setScore'),
         updateTime: (time) => set({ time }, false, 'updateTime'),
 
-        saveHighScore: (name) => {
-          const state = get();
-          const newScore: HighScore = {
-            name,
-            score: state.score,
-            difficulty: GAME_CONFIG.DIFFICULTY[state.difficulty].name,
-            date: new Date().toISOString()
-          };
-
-          const updatedHighScores = [...state.highScores, newScore]
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 10); // Keep only top 10
-
-          set({ highScores: updatedHighScores }, false, 'saveHighScore');
-        },
 
         // Settings
         toggleSound: () => {
