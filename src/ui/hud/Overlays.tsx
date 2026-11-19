@@ -88,7 +88,7 @@ export const ResultOverlay = ({ outcome, entry, rank, survived, difficulty, effe
   const weather = weatherInfo(effect);
 
   return (
-    <div className="scrim absolute inset-0 z-20 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="result-title">
+    <div className="scrim animate-reveal absolute inset-0 z-20 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="result-title">
       <div className="panel w-full max-w-md p-7 sm:p-8 text-center animate-rise">
         <div className="rule-ornament" aria-hidden="true">
           {won ? <Crown className="w-6 h-6" /> : <Skull className="w-6 h-6 text-ember-400" />}

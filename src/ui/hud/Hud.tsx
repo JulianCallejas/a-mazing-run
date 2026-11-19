@@ -116,6 +116,9 @@ const Hud = ({
 
   return (
     <>
+      {status === 'lost' && (
+        <div className="pointer-events-none absolute inset-0 z-[6] bg-[rgb(170_20_20)] animate-hit-flash" aria-hidden="true" />
+      )}
       <div
         ref={danger}
         className="pointer-events-none absolute inset-0 z-[5] opacity-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgb(160_18_18/0.55)_100%)]"

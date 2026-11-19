@@ -226,9 +226,19 @@ const GameScreen: React.FC = () => {
       <Canvas shadows="soft" dpr={[1, QUALITY.maxDpr]} camera={{ fov: 68, near: 0.05, far: 320 }}>
         <GameLoop engine={engine} onEvents={handleEvents} onFrame={handleFrame} frozen={frozen} />
         <CameraRig key={run.id} engine={engine} mode={cameraMode} rig={rig} />
-        <MazeWorld maze={engine.maze} focus={engine.player.position} effect={visualEffect} cameraMode={cameraMode} />
+        <MazeWorld
+          maze={engine.maze}
+          focus={engine.player.position}
+          effect={visualEffect}
+          cameraMode={cameraMode}
+          celebrating={status === 'won'}
+        />
         {showDiagnostics && <RenderDiagnosticsProbe />}
-        <PlayerAvatar actor={engine.player} />
+        <PlayerAvatar
+          key={run.id}
+          actor={engine.player}
+          outcome={status === 'won' || status === 'lost' ? status : null}
+        />
         {engine.enemies.map((enemy) => (
           <GuardianAvatar key={enemy.id} actor={enemy} target={engine.player} />
         ))}

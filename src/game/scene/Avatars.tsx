@@ -42,8 +42,15 @@ const useRootFollow = (actor: Readonly<Actor>) => {
 
 const HERO_STRIDE = 0.42;
 
-export const PlayerAvatar = ({ actor }: { actor: Readonly<Actor> }) => {
+interface PlayerAvatarProps {
+  actor: Readonly<Actor>;
+  /** Final pose: lantern raised on escape, collapse when caught. */
+  outcome?: 'won' | 'lost' | null;
+}
+
+export const PlayerAvatar = ({ actor, outcome = null }: PlayerAvatarProps) => {
   const model = useMemo(() => buildHero(), []);
+  const ending = useRef(0);
   const joints = useRef<HeroJoints | null>(null);
   const gait = useRef(createGait());
   const { root, place } = useRootFollow(actor);
@@ -84,9 +91,27 @@ export const PlayerAvatar = ({ actor }: { actor: Readonly<Actor> }) => {
     // Lantern hangs plumb with a little pendulum lag.
     j.lantern.rotation.x = -(j.leftArm.rotation.x + j.leftElbow.rotation.x) + Math.sin(g.phase) * 0.18 * g.weight;
 
+    // Ending poses blend in over ~0.5 s.
+    ending.current = MathUtils.damp(ending.current, outcome ? 1 : 0, 5, dt);
+    const e = ending.current;
+    if (outcome === 'won' && e > 0.001) {
+      j.leftArm.rotation.x = MathUtils.lerp(j.leftArm.rotation.x, -2.6, e);
+      j.leftElbow.rotation.x = MathUtils.lerp(j.leftElbow.rotation.x, -0.2, e);
+      j.lantern.rotation.x = -(j.leftArm.rotation.x + j.leftElbow.rotation.x);
+      j.head.rotation.x = MathUtils.lerp(j.head.rotation.x, -0.35, e);
+    } else if (outcome === 'lost' && e > 0.001) {
+      j.body.rotation.x = MathUtils.lerp(0, 1.35, e);
+      j.body.position.y = MathUtils.lerp(j.body.position.y, 0.12, e);
+      j.leftKnee.rotation.x = MathUtils.lerp(j.leftKnee.rotation.x, 1.1, e);
+      j.rightKnee.rotation.x = MathUtils.lerp(j.rightKnee.rotation.x, 1.1, e);
+    } else {
+      j.body.rotation.x = 0;
+    }
+
     j.cloak.rotation.x = 0.08 + g.weight * 0.3 + Math.sin(t * 2.7) * 0.025;
     const flicker = 0.9 + 0.1 * Math.sin(t * 13.3) * Math.sin(t * 7.1);
-    j.lanternLight.intensity = 2.2 * flicker;
+    const lanternBoost = outcome === 'won' ? 1 + ending.current * 1.5 : outcome === 'lost' ? 1 - ending.current * 0.85 : 1;
+    j.lanternLight.intensity = 2.2 * flicker * lanternBoost;
     j.lanternCore.scale.setScalar(0.9 + flicker * 0.2);
   });
 
@@ -94,6 +119,19 @@ export const PlayerAvatar = ({ actor }: { actor: Readonly<Actor> }) => {
     <group ref={root}>
       <primitive object={model.root} />
       <ContactShadow radius={0.32} />
+      {/* Hero locator: drawn on top of walls so the hero is never lost behind masonry. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} renderOrder={10}>
+        <ringGeometry args={[0.34, 0.4, 40]} />
+        <meshBasicMaterial
+          color="#f0d993"
+          transparent
+          opacity={0.45}
+          depthTest={false}
+          depthWrite={false}
+          blending={AdditiveBlending}
+          toneMapped={false}
+        />
+      </mesh>
     </group>
   );
 };

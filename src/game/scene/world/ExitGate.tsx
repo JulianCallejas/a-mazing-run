@@ -6,6 +6,7 @@ import {
   BufferGeometry,
   Color,
   DoubleSide,
+  MathUtils,
   MeshStandardMaterial,
   ShaderMaterial,
   type Mesh,
@@ -29,6 +30,7 @@ const PORTAL_VERTEX = /* glsl */ `
 // Arched portal: rectangle up to the spring line, semicircle above it.
 const PORTAL_FRAGMENT = /* glsl */ `
   uniform float uTime;
+  uniform float uBurst;
   varying vec2 vUv;
   void main() {
     vec2 p = vec2(vUv.x * 2.0 - 1.0, vUv.y);
@@ -48,6 +50,9 @@ const PORTAL_FRAGMENT = /* glsl */ `
     vec3 col = mix(gold * 0.35, mix(gold, white, core), swirl * 0.6 + rings * 0.2);
     float edge = smoothstep(0.0, 0.08, 1.0 - abs(p.x)) * smoothstep(0.0, 0.06, p.y);
     float alpha = (0.35 + 0.65 * core) * (0.6 + 0.4 * swirl) * edge;
+    // Victory flare: the gate floods with light.
+    col = mix(col, white * 1.6, uBurst * 0.7);
+    alpha = min(1.0, alpha * (1.0 + uBurst * 1.5));
     gl_FragColor = vec4(col * alpha, alpha);
   }
 `;
@@ -92,13 +97,16 @@ const MOTE_FRAGMENT = /* glsl */ `
 
 interface ExitGateProps {
   gate: ExitGatePlacement;
+  /** The hero just escaped through this gate. */
+  celebrating?: boolean;
 }
 
 /**
  * The goal: a stone archway rising above the walls (visible landmark), a
  * swirling golden portal, a light beacon and rising motes.
  */
-const ExitGate = ({ gate }: ExitGateProps) => {
+const ExitGate = ({ gate, celebrating = false }: ExitGateProps) => {
+  const burst = useRef(0);
   const drawingHeight = useThree((s) => s.size.height);
   const lightRef = useRef<PointLight>(null);
   const portalRef = useRef<Mesh>(null);
@@ -116,7 +124,7 @@ const ExitGate = ({ gate }: ExitGateProps) => {
     });
     const gold = new MeshStandardMaterial({ color: '#c99a3a', metalness: 0.9, roughness: 0.35 });
     const portal = new ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
+      uniforms: { uTime: { value: 0 }, uBurst: { value: 0 } },
       vertexShader: PORTAL_VERTEX,
       fragmentShader: PORTAL_FRAGMENT,
       transparent: true,
@@ -156,13 +164,16 @@ const ExitGate = ({ gate }: ExitGateProps) => {
     return { stone, gold, portal, beam, moteGeometry, motes };
   }, [textures]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime;
+    burst.current = MathUtils.damp(burst.current, celebrating ? 1 : 0, 3, Math.min(delta, 0.1));
     setUniform(portalRef.current, 'uTime', t);
+    setUniform(portalRef.current, 'uBurst', burst.current);
+    if (beamRef.current) beamRef.current.scale.set(1 + burst.current * 1.5, 1, 1 + burst.current * 1.5);
     setUniform(beamRef.current, 'uTime', t);
     setUniform(motesRef.current, 'uTime', t);
     setUniform(motesRef.current, 'uScale', drawingHeight / 2);
-    if (lightRef.current) lightRef.current.intensity = 7 + Math.sin(t * 2.2) * 1.5;
+    if (lightRef.current) lightRef.current.intensity = 7 + Math.sin(t * 2.2) * 1.5 + burst.current * 22;
   });
 
   // Local frame: +z points toward the approach corridor, x spans the arch.

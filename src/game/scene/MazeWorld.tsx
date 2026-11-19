@@ -19,10 +19,12 @@ interface MazeWorldProps {
   focus: { x: number; z: number };
   effect: VisualEffect;
   cameraMode: CameraMode;
+  /** The hero escaped: the exit gate flares. */
+  celebrating?: boolean;
 }
 
 /** The medieval maze world: architecture, props, lights, sky, weather and post. */
-const MazeWorld = ({ maze, focus, effect, cameraMode }: MazeWorldProps) => {
+const MazeWorld = ({ maze, focus, effect, cameraMode, celebrating = false }: MazeWorldProps) => {
   const atmosphere = ATMOSPHERES[effect];
   const dressing = useMemo(() => dressMaze(maze), [maze]);
   const center: [number, number] = [(maze.width - 1) / 2, (maze.height - 1) / 2];
@@ -41,7 +43,7 @@ const MazeWorld = ({ maze, focus, effect, cameraMode }: MazeWorldProps) => {
       <MazeArchitecture maze={maze} dressing={dressing} atmosphere={atmosphere} />
       <Perimeter props={dressing.perimeter} />
       <Torches torches={dressing.torches} focus={focus} atmosphere={atmosphere} />
-      <ExitGate gate={dressing.exitGate} />
+      <ExitGate gate={dressing.exitGate} celebrating={celebrating} />
       <Weather kind={atmosphere.weather} focus={focus} />
       <PostFX />
     </>
