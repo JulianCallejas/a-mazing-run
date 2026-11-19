@@ -9,7 +9,6 @@ import {
   type LineSegments,
   type Points,
 } from 'three';
-import type { GameEngine } from '../../core/engine';
 import { createRandom } from '../../core/random';
 import { setUniform } from './uniforms';
 
@@ -111,10 +110,11 @@ const buildField = (count: number, seed: number, segments: boolean) => {
 
 interface WeatherProps {
   kind: 'none' | 'snow' | 'rain';
-  engine: GameEngine;
+  /** Point the particle field wraps around. */
+  focus: { x: number; z: number };
 }
 
-const Weather = ({ kind, engine }: WeatherProps) => {
+const Weather = ({ kind, focus }: WeatherProps) => {
   const drawingHeight = useThree((s) => s.size.height);
   const pointsRef = useRef<Points>(null);
   const linesRef = useRef<LineSegments>(null);
@@ -152,7 +152,7 @@ const Weather = ({ kind, engine }: WeatherProps) => {
   useFrame(({ clock }) => {
     const field = pointsRef.current ?? linesRef.current;
     setUniform(field, 'uTime', clock.elapsedTime);
-    setUniform(field, 'uCenter', [engine.player.position.x, 0, engine.player.position.z]);
+    setUniform(field, 'uCenter', [focus.x, 0, focus.z]);
     setUniform(field, 'uScale', drawingHeight / 2);
   });
 

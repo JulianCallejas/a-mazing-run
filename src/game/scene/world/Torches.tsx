@@ -20,7 +20,6 @@ import {
   type Group,
   type Points,
 } from 'three';
-import type { GameEngine } from '../../core/engine';
 import type { TorchPlacement } from '../../core/dressing';
 import { DIRECTION_VECTORS } from '../../core/engine';
 import { yawFromDirection } from '../../core/cameraMath';
@@ -92,7 +91,8 @@ const GLOW_FRAGMENT = /* glsl */ `
 
 interface TorchesProps {
   torches: TorchPlacement[];
-  engine: GameEngine;
+  /** Point the light pool follows (the player, or the menu camera target). */
+  focus: { x: number; z: number };
   atmosphere: Atmosphere;
 }
 
@@ -101,7 +101,7 @@ interface TorchesProps {
  * exist; every few frames they are reassigned to the torches nearest the
  * player and faded by distance, so reassignment never pops on screen.
  */
-const Torches = ({ torches, engine, atmosphere }: TorchesProps) => {
+const Torches = ({ torches, focus, atmosphere }: TorchesProps) => {
   const drawingHeight = useThree((s) => s.size.height);
   const plateRef = useRef<InstancedMesh>(null);
   const handleRef = useRef<InstancedMesh>(null);
@@ -207,7 +207,7 @@ const Torches = ({ torches, engine, atmosphere }: TorchesProps) => {
     if (innerFlameRef.current) innerFlameRef.current.instanceMatrix.needsUpdate = true;
 
     // Light pool: reassign to the nearest torches a few times per second.
-    const player = engine.player.position;
+    const player = focus;
     const state = assignment.current;
     if (t >= state.nextUpdate) {
       state.nextUpdate = t + 0.2;

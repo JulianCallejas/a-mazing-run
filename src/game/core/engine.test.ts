@@ -191,6 +191,31 @@ describe('guardians', () => {
     expect(engine.enemies[0].moving).toBe(true);
   });
 
+  it('emits a single awaken event when the grace period ends', () => {
+    const engine = createGameEngine({
+      maze: corridor,
+      difficulty: 'MEDIUM',
+      enemySpawns: [{ x: 7, z: 3 }],
+      gracePeriodMs: 500,
+    });
+    engine.start();
+    advance(engine, 0.4);
+    expect(types(engine.drainEvents())).not.toContain('awaken');
+
+    advance(engine, 1);
+    const awaken = engine.drainEvents().filter((e) => e.type === 'awaken');
+    expect(awaken).toHaveLength(1);
+    advance(engine, 1);
+    expect(types(engine.drainEvents())).not.toContain('awaken');
+  });
+
+  it('never emits awaken when there are no guardians', () => {
+    const engine = soloEngine();
+    engine.start();
+    advance(engine, 3);
+    expect(types(engine.drainEvents())).not.toContain('awaken');
+  });
+
   it('chases the player along the shortest path at the difficulty speed', () => {
     const engine = createGameEngine({
       maze: corridor,

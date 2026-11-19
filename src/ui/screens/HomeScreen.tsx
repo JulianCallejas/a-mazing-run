@@ -1,170 +1,172 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Crown, DoorOpen, ScrollText, Swords, Volume2, VolumeX } from 'lucide-react';
 import useGameStore from '../../store/useGameStore';
-import { GAME_CONFIG } from '../../utils/constants';
 import { highScores } from '../../game/core/highScores';
-import MedievalButton from '../components/MedievalButton';
-import MedievalPanel from '../components/MedievalPanel';
-import { Sword, Crown, Settings } from 'lucide-react';
+import { formatTime } from '../../game/core/scoring';
+import { DIFFICULTY_ORDER, WEATHER_ORDER, difficultyInfo, weatherInfo } from '../options';
+import GuardianHelmIcon from '../components/GuardianHelmIcon';
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
-  
-  // Use direct selectors to avoid potential infinite loops
-  const difficulty = useGameStore(state => state.difficulty);
-  const visualEffect = useGameStore(state => state.visualEffect);
-  const setDifficulty = useGameStore(state => state.setDifficulty);
-  const setVisualEffect = useGameStore(state => state.setVisualEffect);
-  
-  const topScores = highScores.getTopScores().slice(0, 3);
+  const difficulty = useGameStore((s) => s.difficulty);
+  const visualEffect = useGameStore((s) => s.visualEffect);
+  const soundEnabled = useGameStore((s) => s.soundEnabled);
+  const setDifficulty = useGameStore((s) => s.setDifficulty);
+  const setVisualEffect = useGameStore((s) => s.setVisualEffect);
+  const toggleSound = useGameStore((s) => s.toggleSound);
+  const [scores] = useState(() => highScores.getTopScores().slice(0, 5));
 
-  const handleStartGame = (): void => {
-    navigate('/game');
-  };
-
-  const handleDifficultyChange = (newDifficulty: keyof typeof GAME_CONFIG.DIFFICULTY): void => {
-    setDifficulty(newDifficulty);
-  };
-
-  const handleVisualEffectChange = (effect: keyof typeof GAME_CONFIG.VISUAL_EFFECTS): void => {
-    setVisualEffect(effect);
-  };
+  const selected = difficultyInfo(difficulty);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-amber-900 via-amber-800 to-red-900">
-      {/* Main Title */}
-      <div className="text-center mb-8">
-        <h1 className="font-cinzel-decorative text-6xl md:text-8xl font-bold text-amber-100 mb-2 drop-shadow-2xl">
-          A-mazing Run
-        </h1>
-        <p className="font-cinzel text-xl md:text-2xl text-amber-200 italic">
-          Escape the Medieval Labyrinth
-        </p>
-        <div className="flex justify-center mt-4">
-          <Crown className="w-12 h-12 text-amber-400 mx-2" />
-          <Sword className="w-12 h-12 text-amber-400 mx-2" />
-          <Crown className="w-12 h-12 text-amber-400 mx-2" />
+    <div className="min-h-screen px-5 py-7 sm:px-10 lg:px-14 lg:py-9 flex flex-col">
+      <header className="flex items-start justify-between gap-6 animate-rise">
+        <div>
+          <h1 className="title-gilded text-6xl sm:text-7xl lg:text-8xl leading-[0.9]">A-mazing Run</h1>
+          <p className="mt-3 font-label text-lg sm:text-xl text-parchment-300 tracking-wide">
+            Escape the cursed labyrinth before its guardians wake.
+          </p>
         </div>
-      </div>
+        <button
+          type="button"
+          className="btn btn-icon shrink-0"
+          onClick={toggleSound}
+          aria-label={soundEnabled ? 'Mute sound' : 'Unmute sound'}
+          title={soundEnabled ? 'Mute sound' : 'Unmute sound'}
+        >
+          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+        </button>
+      </header>
 
-      <div className="grid md:grid-cols-2 gap-8 max-w-6xl w-full">
-        {/* Configuration Panel */}
-        <MedievalPanel title="Game Configuration" className="h-fit">
-          <div className="space-y-6">
-            {/* Difficulty Selection */}
-            <div>
-              <label className="block font-cinzel text-lg font-semibold text-amber-900 mb-3">
-                <Settings className="inline w-5 h-5 mr-2" />
-                Difficulty Level
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(GAME_CONFIG.DIFFICULTY).map(([key, config]) => (
-                  <button
-                    key={key}
-                    onClick={() => handleDifficultyChange(key as keyof typeof GAME_CONFIG.DIFFICULTY)}
-                    className={`
-                      p-3 rounded-lg border-2 font-cinzel text-sm transition-all duration-200
-                      ${difficulty === key
-                        ? 'bg-amber-600 border-amber-800 text-white shadow-lg'
-                        : 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200'
-                      }
-                    `}
-                  >
-                    {config.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Visual Effects */}
-            <div>
-              <label className="block font-cinzel text-lg font-semibold text-amber-900 mb-3">
-                Visual Effects
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(GAME_CONFIG.VISUAL_EFFECTS).map(([key, effect]) => (
-                  <button
-                    key={key}
-                    onClick={() => handleVisualEffectChange(key as keyof typeof GAME_CONFIG.VISUAL_EFFECTS)}
-                    className={`
-                      p-3 rounded-lg border-2 font-cinzel text-sm transition-all duration-200
-                      ${visualEffect === key
-                        ? 'bg-purple-600 border-purple-800 text-white shadow-lg'
-                        : 'bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200'
-                      }
-                    `}
-                  >
-                    {effect.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Start Game Button */}
-            <MedievalButton 
-              onClick={handleStartGame}
-              variant="primary"
-              size="lg"
-              className="w-full"
-            >
-              <Sword className="inline w-6 h-6 mr-2" />
-              Begin Quest
-            </MedievalButton>
+      <main className="mt-6 lg:mt-8 grid gap-8 lg:grid-cols-[minmax(0,30rem)_1fr_minmax(0,21rem)] items-start flex-1">
+        <section className="panel p-6 sm:p-7 animate-rise [animation-delay:80ms]" aria-label="Prepare your escape">
+          <h2 className="font-label text-sm tracking-[0.2em] text-gold-400">Choose your trial</h2>
+          <div role="radiogroup" aria-label="Difficulty" className="mt-3 grid grid-cols-2 gap-2.5">
+            {DIFFICULTY_ORDER.map((key) => {
+              const info = difficultyInfo(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={difficulty === key}
+                  aria-label={info.label}
+                  className="choice px-3.5 py-3"
+                  onClick={() => setDifficulty(key)}
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-label text-base sm:text-lg leading-tight">{info.label}</span>
+                    <span className="flex gap-0.5">
+                      {[0, 1].map((i) => (
+                        <GuardianHelmIcon key={i} className="w-4 h-4" muted={i >= info.guardians} />
+                      ))}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs text-parchment-500 numeric">
+                    {info.size}×{info.size} · guardians {info.speedPercent}% speed
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        </MedievalPanel>
 
-        {/* High Scores & Navigation */}
-        <div className="space-y-6">
-          {/* High Scores */}
-          <MedievalPanel title="Hall of Fame" className="h-fit">
-            {topScores.length > 0 ? (
-              <div className="space-y-3">
-                {topScores.map((score, index) => (
-                  <div key={score.id} className="flex items-center justify-between p-3 bg-amber-200 border border-amber-400 rounded-lg">
-                    <div className="flex items-center">
-                      <Crown className={`w-5 h-5 mr-2 ${index === 0 ? 'text-yellow-600' : index === 1 ? 'text-gray-500' : 'text-amber-600'}`} />
-                      <span className="font-cinzel font-semibold text-amber-900">
-                        #{index + 1}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-cinzel font-bold text-amber-900">{score.score} pts</div>
-                      <div className="font-cinzel text-sm text-amber-700">
-                        {GAME_CONFIG.DIFFICULTY[score.difficulty].name}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-amber-700 font-cinzel italic">
-                No scores yet. Be the first hero!
-              </div>
-            )}
-          </MedievalPanel>
+          <h2 className="mt-5 font-label text-sm tracking-[0.2em] text-gold-400">Choose the weather</h2>
+          <div role="radiogroup" aria-label="Weather" className="mt-3 grid grid-cols-2 gap-2.5">
+            {WEATHER_ORDER.map((key) => {
+              const info = weatherInfo(key);
+              const Icon = info.icon;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={visualEffect === key}
+                  aria-label={info.label}
+                  className="choice px-3.5 py-3 flex items-center gap-3"
+                  onClick={() => setVisualEffect(key)}
+                >
+                  <Icon className="w-5 h-5 text-frost-300 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="font-label text-sm sm:text-base block leading-tight">{info.label}</span>
+                    <span className="text-xs text-parchment-500 numeric">
+                      {info.bonus > 0 ? `+${info.bonus} pts` : 'no bonus'}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Navigation Buttons */}
-          <div className="space-y-4">
-            <MedievalButton 
-              onClick={() => navigate('/instructions')}
-              variant="secondary"
-              size="md"
-              className="w-full"
-            >
+          <button
+            type="button"
+            className="btn btn-primary w-full mt-6 py-3.5 text-xl"
+            onClick={() => navigate('/game')}
+          >
+            <Swords className="w-5 h-5" aria-hidden="true" />
+            Begin the Escape
+          </button>
+          <p className="mt-3 text-center text-xs text-parchment-500 numeric">
+            Score ×{selected.multiplier} on {selected.label} · faster escapes score higher
+          </p>
+
+          <nav className="mt-4 grid grid-cols-2 gap-2.5" aria-label="More">
+            <button type="button" className="btn btn-ghost py-2.5" onClick={() => navigate('/instructions')}>
+              <ScrollText className="w-4 h-4" aria-hidden="true" />
               How to Play
-            </MedievalButton>
-            
-            <MedievalButton 
-              onClick={() => navigate('/about')}
-              variant="secondary"
-              size="md"
-              className="w-full"
-            >
-              About the Game
-            </MedievalButton>
+            </button>
+            <button type="button" className="btn btn-ghost py-2.5" onClick={() => navigate('/about')}>
+              <DoorOpen className="w-4 h-4" aria-hidden="true" />
+              Lore & Credits
+            </button>
+          </nav>
+        </section>
+
+        <div className="hidden lg:block" />
+
+        <section className="panel p-6 animate-rise [animation-delay:160ms]" aria-labelledby="hall-of-fame">
+          <div className="rule-ornament" aria-hidden="true">
+            <Crown className="w-5 h-5" />
           </div>
-        </div>
-      </div>
+          <h2 id="hall-of-fame" className="mt-1 text-center font-display text-3xl text-gold-300">
+            Hall of Fame
+          </h2>
+          {scores.length === 0 ? (
+            <p className="mt-5 text-center text-parchment-500 italic">
+              No one has escaped yet. Be the first legend.
+            </p>
+          ) : (
+            <ol className="mt-4 space-y-2">
+              {scores.map((entry, index) => {
+                const weather = weatherInfo(entry.visualEffect);
+                const WeatherIcon = weather.icon;
+                return (
+                  <li
+                    key={entry.id}
+                    className="grid grid-cols-[1.75rem_1fr_auto] items-center gap-3 px-3 py-2 bg-iron-800/70 shadow-[inset_0_0_0_1px_rgb(212_175_55/0.12)]"
+                  >
+                    <span
+                      className={`font-display text-2xl text-center ${
+                        index === 0 ? 'text-gold-400' : index === 1 ? 'text-parchment-300' : 'text-ember-400/80'
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block numeric text-lg text-parchment-100">{entry.score} pts</span>
+                      <span className="flex items-center gap-1.5 text-xs text-parchment-500">
+                        <span className="truncate">{difficultyInfo(entry.difficulty).label}</span>
+                        <WeatherIcon className="w-3 h-3 shrink-0" aria-label={weather.label} />
+                      </span>
+                    </span>
+                    <span className="numeric text-sm text-parchment-300">{formatTime(entry.time)}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </section>
+      </main>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { GameEngine } from '../core/engine';
+import type { Maze } from '../core/maze';
 import { dressMaze } from '../core/dressing';
 import type { VisualEffect } from '../core/scoring';
 import type { CameraMode } from '../core/controls';
@@ -14,14 +14,15 @@ import PostFX from './world/PostFX';
 import Perimeter from './world/Perimeter';
 
 interface MazeWorldProps {
-  engine: GameEngine;
+  maze: Maze;
+  /** Live point (mutated elsewhere) that torch lights and weather follow. */
+  focus: { x: number; z: number };
   effect: VisualEffect;
   cameraMode: CameraMode;
 }
 
 /** The medieval maze world: architecture, props, lights, sky, weather and post. */
-const MazeWorld = ({ engine, effect, cameraMode }: MazeWorldProps) => {
-  const { maze } = engine;
+const MazeWorld = ({ maze, focus, effect, cameraMode }: MazeWorldProps) => {
   const atmosphere = ATMOSPHERES[effect];
   const dressing = useMemo(() => dressMaze(maze), [maze]);
   const center: [number, number] = [(maze.width - 1) / 2, (maze.height - 1) / 2];
@@ -39,9 +40,9 @@ const MazeWorld = ({ engine, effect, cameraMode }: MazeWorldProps) => {
       />
       <MazeArchitecture maze={maze} dressing={dressing} atmosphere={atmosphere} />
       <Perimeter props={dressing.perimeter} />
-      <Torches torches={dressing.torches} engine={engine} atmosphere={atmosphere} />
+      <Torches torches={dressing.torches} focus={focus} atmosphere={atmosphere} />
       <ExitGate gate={dressing.exitGate} />
-      <Weather kind={atmosphere.weather} engine={engine} />
+      <Weather kind={atmosphere.weather} focus={focus} />
       <PostFX />
     </>
   );

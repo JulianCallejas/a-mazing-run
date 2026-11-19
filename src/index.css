@@ -1,26 +1,271 @@
 @import 'tailwindcss';
 
+/*
+ * Design system: "forged iron and illuminated gold".
+ * Dark iron surfaces, thin gold filigree, crimson (#B64362 family) for primary
+ * actions and danger, ember for warnings. Shapes use cut corners, never pills.
+ */
 @theme {
-  --font-cinzel: 'Cinzel', serif;
-  --font-cinzel-decorative: 'Cinzel Decorative', serif;
+  --font-display: 'Pirata One', 'Spectral', serif;
+  --font-label: 'IM Fell English SC', 'Spectral', serif;
+  --font-body: 'Spectral', Georgia, serif;
 
-  --color-medieval-primary: #533324;
-  --color-medieval-secondary: #b64362;
-  --color-medieval-accent: #84548c;
-  --color-medieval-gold: #d4af37;
-  --color-medieval-light-brown: #8b4513;
-  --color-medieval-dark-brown: #2f1b14;
+  --color-night-950: #07080d;
+  --color-night-900: #0d1018;
+  --color-iron-800: #161a23;
+  --color-iron-700: #222733;
+  --color-iron-600: #313848;
+  --color-gold-300: #f0d993;
+  --color-gold-400: #e3c06a;
+  --color-gold-500: #d4af37;
+  --color-gold-700: #8a6d22;
+  --color-crimson-400: #d0687c;
+  --color-crimson-500: #b64362;
+  --color-crimson-700: #7e2433;
+  --color-crimson-900: #3d1018;
+  --color-ember-400: #ff8a4c;
+  --color-ember-500: #e2553a;
+  --color-parchment-100: #efe4cc;
+  --color-parchment-300: #c9b896;
+  --color-parchment-500: #8f8063;
+  --color-moss-400: #8fae6f;
+  --color-frost-300: #b9d3ff;
 
-  --animate-spin-slow: spin 3s linear infinite;
-  --animate-pulse-slow: pulse 3s infinite;
-  --animate-reverse: reverse-spin 2s linear infinite;
+  --animate-rise: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-flicker: flicker 3.2s ease-in-out infinite;
+  --animate-banner: banner 3.2s ease-in-out both;
 
-  @keyframes reverse-spin {
+  @keyframes rise {
     from {
-      transform: rotate(360deg);
+      opacity: 0;
+      transform: translateY(14px);
     }
     to {
-      transform: rotate(0deg);
+      opacity: 1;
+      transform: none;
     }
+  }
+  @keyframes flicker {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    40% {
+      opacity: 0.82;
+    }
+    55% {
+      opacity: 0.95;
+    }
+  }
+  @keyframes banner {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.98);
+      letter-spacing: 0.3em;
+    }
+    15%,
+    75% {
+      opacity: 1;
+      transform: none;
+      letter-spacing: 0.12em;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--color-night-950);
+    color: var(--color-parchment-100);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold-400);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Cut-corner iron panel with gold hairline. */
+  .panel {
+    --cut: 14px;
+    position: relative;
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgb(212 175 55 / 0.07), transparent 60%),
+      linear-gradient(180deg, rgb(22 26 35 / 0.94), rgb(10 12 18 / 0.96));
+    clip-path: polygon(
+      var(--cut) 0,
+      calc(100% - var(--cut)) 0,
+      100% var(--cut),
+      100% calc(100% - var(--cut)),
+      calc(100% - var(--cut)) 100%,
+      var(--cut) 100%,
+      0 calc(100% - var(--cut)),
+      0 var(--cut)
+    );
+    box-shadow: inset 0 0 0 1px rgb(212 175 55 / 0.28);
+  }
+  .panel::before {
+    /* Gold filigree rule inset from the edge. */
+    content: '';
+    position: absolute;
+    inset: 6px;
+    pointer-events: none;
+    clip-path: inherit;
+    border: 1px solid rgb(212 175 55 / 0.18);
+  }
+
+  .rule-ornament {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--color-gold-500);
+  }
+  .rule-ornament::before,
+  .rule-ornament::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(212 175 55 / 0.6), transparent);
+  }
+
+  .btn {
+    --cut: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font-family: var(--font-label);
+    letter-spacing: 0.06em;
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+    transition:
+      transform 120ms ease,
+      filter 160ms ease,
+      background 160ms ease,
+      color 160ms ease;
+    user-select: none;
+  }
+  .btn:hover:not(:disabled) {
+    filter: brightness(1.15);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.99);
+  }
+  .btn:disabled {
+    filter: grayscale(0.7) brightness(0.6);
+  }
+  .btn-primary {
+    color: var(--color-parchment-100);
+    background: linear-gradient(180deg, var(--color-crimson-500), var(--color-crimson-700));
+    box-shadow:
+      inset 0 0 0 1px rgb(240 217 147 / 0.55),
+      inset 0 1px 0 rgb(255 255 255 / 0.2),
+      0 0 24px rgb(182 67 98 / 0.35);
+  }
+  .btn-secondary {
+    color: var(--color-parchment-100);
+    background: linear-gradient(180deg, var(--color-iron-600), var(--color-iron-800));
+    box-shadow: inset 0 0 0 1px rgb(212 175 55 / 0.35);
+  }
+  .btn-ghost {
+    color: var(--color-parchment-300);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px rgb(201 184 150 / 0.25);
+  }
+  .btn-icon {
+    --cut: 7px;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--color-gold-300);
+    background: linear-gradient(180deg, rgb(49 56 72 / 0.9), rgb(22 26 35 / 0.92));
+    box-shadow: inset 0 0 0 1px rgb(212 175 55 / 0.4);
+  }
+
+  /* Selectable option tile (difficulty, weather). */
+  .choice {
+    --cut: 8px;
+    position: relative;
+    text-align: left;
+    color: var(--color-parchment-300);
+    background: rgb(22 26 35 / 0.75);
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+    box-shadow: inset 0 0 0 1px rgb(201 184 150 / 0.18);
+    transition:
+      background 160ms ease,
+      box-shadow 160ms ease,
+      color 160ms ease;
+  }
+  .choice:hover {
+    color: var(--color-parchment-100);
+    box-shadow: inset 0 0 0 1px rgb(212 175 55 / 0.45);
+  }
+  .choice[aria-checked='true'] {
+    color: var(--color-parchment-100);
+    background: linear-gradient(180deg, rgb(126 36 51 / 0.85), rgb(61 16 24 / 0.9));
+    box-shadow:
+      inset 0 0 0 1px rgb(240 217 147 / 0.7),
+      0 0 18px rgb(182 67 98 / 0.3);
+  }
+
+  .keycap {
+    display: inline-flex;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    padding: 0 0.35rem;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-label);
+    font-size: 0.8rem;
+    color: var(--color-gold-300);
+    background: linear-gradient(180deg, var(--color-iron-600), var(--color-iron-800));
+    box-shadow:
+      inset 0 0 0 1px rgb(212 175 55 / 0.45),
+      0 2px 0 rgb(0 0 0 / 0.6);
+    border-radius: 3px;
+  }
+
+  .numeric {
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  .title-gilded {
+    font-family: var(--font-display);
+    background: linear-gradient(180deg, #fff4cf 0%, #e3c06a 45%, #a8812a 70%, #f0d993 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.7)) drop-shadow(0 0 22px rgb(212 175 55 / 0.25));
+  }
+
+  .scrim {
+    background: radial-gradient(ellipse at center, rgb(7 8 13 / 0.55), rgb(7 8 13 / 0.88));
+    backdrop-filter: blur(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

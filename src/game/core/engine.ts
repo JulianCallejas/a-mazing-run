@@ -25,6 +25,8 @@ export type GameStatus = 'ready' | 'playing' | 'paused' | 'won' | 'lost';
 export type GameEvent =
   | { type: 'step' }
   | { type: 'bump' }
+  /** Guardians start hunting (grace period over). Emitted once per run. */
+  | { type: 'awaken' }
   | { type: 'won'; time: number }
   | { type: 'lost'; time: number };
 
@@ -130,6 +132,7 @@ export const createGameEngine = (options: GameEngineOptions) => {
   let status: GameStatus = 'ready';
   let elapsed = 0;
   let accumulator = 0;
+  let awakened = false;
   let queued: Direction | null = null;
   const held: Direction[] = [];
   const events: GameEvent[] = [];
@@ -218,6 +221,10 @@ export const createGameEngine = (options: GameEngineOptions) => {
     if (status !== 'playing') return;
 
     const hunting = elapsed >= gracePeriod - EPSILON;
+    if (hunting && !awakened && enemies.length > 0) {
+      awakened = true;
+      events.push({ type: 'awaken' });
+    }
     for (const enemy of enemies) {
       if (hunting) tickEnemy(enemy, dt);
       const dx = enemy.position.x - player.position.x;
