@@ -11,6 +11,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { PerimeterProp } from '../../core/dressing';
 import { getTextures } from '../../art/proceduralTextures';
+import { QUALITY } from '../../art/quality';
 
 /** Three stacked cones merged into one pine canopy geometry. */
 const pineCanopy = () => {
@@ -86,12 +87,12 @@ const Perimeter = ({ props }: PerimeterProps) => {
     <group name="perimeter">
       {trees.length > 0 && (
         <>
-          <instancedMesh ref={trunkRef} args={[resources.trunk, resources.bark, trees.length]} castShadow />
-          <instancedMesh ref={canopyRef} args={[resources.canopy, resources.needles, trees.length]} castShadow />
+          <instancedMesh ref={trunkRef} args={[resources.trunk, resources.bark, trees.length]} castShadow={QUALITY.propShadows} />
+          <instancedMesh ref={canopyRef} args={[resources.canopy, resources.needles, trees.length]} castShadow={QUALITY.propShadows} />
         </>
       )}
       {rocks.length > 0 && (
-        <instancedMesh ref={rockRef} args={[resources.rock, resources.stone, rocks.length]} castShadow receiveShadow />
+        <instancedMesh ref={rockRef} args={[resources.rock, resources.stone, rocks.length]} castShadow={QUALITY.propShadows} receiveShadow />
       )}
     </group>
   );

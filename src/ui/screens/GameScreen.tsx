@@ -17,7 +17,9 @@ import RenderDiagnosticsProbe from '../../game/scene/RenderDiagnostics';
 import { diagnosticsEnabled } from '../../game/scene/diagnostics';
 import Hud, { type Banner, type HudHandle } from '../hud/Hud';
 import { PauseOverlay, ResultOverlay } from '../hud/Overlays';
+import { applyTestState, isTestState, runsWithoutGuardians, type TestState } from '../../game/scene/testHooks';
 import TouchControls from '../hud/TouchControls';
+import { QUALITY } from '../../game/art/quality';
 
 /** Faces the camera down the first open corridor from the start cell. */
 const initialYawIndex = (maze: Maze): number => {
@@ -31,11 +33,19 @@ const initialYawIndex = (maze: Maze): number => {
 
 let runCounter = 0;
 
-const createRun = (difficulty: Difficulty) => {
+interface RunOptions {
+  /** Fixed maze seed (QA reproducibility); random when omitted. */
+  seed?: number;
+  /** QA only: run without guardians. */
+  guardians?: boolean;
+}
+
+const createRun = (difficulty: Difficulty, options: RunOptions = {}) => {
   const size = GAME_CONFIG.DIFFICULTY[difficulty].mazeSize;
-  const maze = generateMaze({ width: size, height: size });
+  const maze = generateMaze({ width: size, height: size, seed: options.seed });
   const rig: CameraRigState = { yawIndex: initialYawIndex(maze), zoom: 3.5 };
-  return { id: ++runCounter, engine: createGameEngine({ maze, difficulty }), rig };
+  const engine = createGameEngine({ maze, difficulty, enemySpawns: options.guardians === false ? [] : undefined });
+  return { id: ++runCounter, engine, rig };
 };
 
 interface RunResult {
@@ -60,6 +70,9 @@ const GameScreen: React.FC = () => {
   const [showDiagnostics] = useState(diagnosticsEnabled);
   const hud = useRef<HudHandle>(null);
   const guardiansAwake = useRef(false);
+  const frozen = useRef(false);
+  const pendingState = useRef<{ name: TestState; resolve: (value: { state: string }) => void } | null>(null);
+  const qaSeed = useRef(42);
   const { engine, rig } = run;
 
   // QA bots read the live engine only when the app was opened with ?debug.
@@ -70,6 +83,64 @@ const GameScreen: React.FC = () => {
       window.__mazeEngine = undefined;
     };
   }, [engine, showDiagnostics]);
+
+  // QA test-hook contract (?debug only): reproducible states for the canvas inspector.
+  useEffect(() => {
+    if (!showDiagnostics) return;
+    window.__THREE_GAME_TEST_HOOKS__ = {
+      seed: (seed) => {
+        qaSeed.current = seed;
+        return { seed };
+      },
+      setPausedForScreenshot: (paused) => {
+        frozen.current = paused;
+      },
+      setState: (name) =>
+        new Promise((resolve, reject) => {
+          if (!isTestState(name)) {
+            reject(new Error(`Unknown test state: ${name}`));
+            return;
+          }
+          frozen.current = false;
+          pendingState.current = { name, resolve };
+          useGameStore.getState().setCameraMode(name === 'aerial-map' ? 'aerial' : 'third-person');
+          hud.current?.resetTimer();
+          guardiansAwake.current = false;
+          setResult(null);
+          setBanner(null);
+          setRun(
+            createRun(useGameStore.getState().difficulty, {
+              seed: qaSeed.current,
+              guardians: !runsWithoutGuardians(name),
+            }),
+          );
+        }),
+    };
+    return () => {
+      window.__THREE_GAME_TEST_HOOKS__ = undefined;
+    };
+  }, [showDiagnostics]);
+
+  // Applies a pending QA state to the freshly created run.
+  useEffect(() => {
+    const pending = pendingState.current;
+    if (!pending) return;
+    pendingState.current = null;
+    applyTestState(engine, pending.name, rig);
+    // Hold simulated time at the requested state while the camera settles;
+    // rendering and event draining continue (the inspector freezes again later).
+    frozen.current = true;
+    let frames = 0;
+    const settle = () => {
+      frames += 1;
+      // Won/lost arrive through engine events; other states sync here.
+      if (frames === 1 && engine.status !== 'won' && engine.status !== 'lost') setStatus(engine.status);
+      // ~0.75 s at 60 fps: lets the camera rig finish turning behind the hero.
+      if (frames < 45) requestAnimationFrame(settle);
+      else pending.resolve({ state: pending.name });
+    };
+    requestAnimationFrame(settle);
+  }, [engine, rig]);
 
   const announce = useCallback((text: string, tone: Banner['tone']) => {
     setBanner({ id: performance.now(), text, tone });
@@ -151,6 +222,18 @@ const GameScreen: React.FC = () => {
 
   return (
     <div className="w-full h-screen relative overflow-hidden bg-night-950">
+      {/* The 3D canvas comes first in the DOM (QA tools sample the first canvas); HUD layers stack above via z-index. */}
+      <Canvas shadows="soft" dpr={[1, QUALITY.maxDpr]} camera={{ fov: 68, near: 0.05, far: 320 }}>
+        <GameLoop engine={engine} onEvents={handleEvents} onFrame={handleFrame} frozen={frozen} />
+        <CameraRig key={run.id} engine={engine} mode={cameraMode} rig={rig} />
+        <MazeWorld maze={engine.maze} focus={engine.player.position} effect={visualEffect} cameraMode={cameraMode} />
+        {showDiagnostics && <RenderDiagnosticsProbe />}
+        <PlayerAvatar actor={engine.player} />
+        {engine.enemies.map((enemy) => (
+          <GuardianAvatar key={enemy.id} actor={enemy} target={engine.player} />
+        ))}
+      </Canvas>
+
       <Hud
         ref={hud}
         engine={engine}
@@ -192,16 +275,6 @@ const GameScreen: React.FC = () => {
         />
       )}
 
-      <Canvas shadows="soft" dpr={[1, 2]} camera={{ fov: 68, near: 0.05, far: 320 }}>
-        <GameLoop engine={engine} onEvents={handleEvents} onFrame={handleFrame} />
-        <CameraRig key={run.id} engine={engine} mode={cameraMode} rig={rig} />
-        <MazeWorld maze={engine.maze} focus={engine.player.position} effect={visualEffect} cameraMode={cameraMode} />
-        {showDiagnostics && <RenderDiagnosticsProbe />}
-        <PlayerAvatar actor={engine.player} />
-        {engine.enemies.map((enemy) => (
-          <GuardianAvatar key={enemy.id} actor={enemy} target={engine.player} />
-        ))}
-      </Canvas>
     </div>
   );
 };

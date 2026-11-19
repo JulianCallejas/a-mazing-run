@@ -6,6 +6,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { QUALITY } from '../../art/quality';
 
 const VignetteShader = {
   uniforms: { tDiffuse: { value: null }, uStrength: { value: 0.55 }, uSize: { value: 0.78 } },
@@ -43,7 +44,8 @@ const PostFX = () => {
     const target = new WebGLRenderTarget(1, 1, { type: HalfFloatType, samples: 4 });
     const fx = new EffectComposer(gl, target);
     fx.addPass(new RenderPass(scene, camera));
-    fx.addPass(new UnrealBloomPass(new Vector2(256, 256), 0.6, 0.45, 0.9));
+    // Mobile tier skips bloom to stay inside its draw-call budget.
+    if (QUALITY.bloom) fx.addPass(new UnrealBloomPass(new Vector2(256, 256), 0.6, 0.45, 0.9));
     fx.addPass(new ShaderPass(VignetteShader));
     fx.addPass(new OutputPass());
     return fx;

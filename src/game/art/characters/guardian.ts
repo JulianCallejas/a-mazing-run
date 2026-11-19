@@ -18,6 +18,7 @@ import {
 } from 'three';
 import { createRandom } from '../../core/random';
 import type { CharacterModel } from './hero';
+import { mergeStaticParts } from './mergeParts';
 
 export interface GuardianJoints {
   body: Group;
@@ -200,6 +201,8 @@ export const buildGuardian = (): CharacterModel<GuardianJoints> => {
   const weapon = pivot(rightArm, 'weapon', 0, -0.5, 0.04);
   weapon.add(halberd(m));
   weapon.rotation.set(0.25, 0, -0.18);
+
+  mergeStaticParts(root);
 
   return {
     root,

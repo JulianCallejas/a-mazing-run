@@ -13,6 +13,7 @@ import { Cell, type Maze } from '../../core/maze';
 import type { MazeDressing } from '../../core/dressing';
 import { WALL_VARIANTS, getTextures } from '../../art/proceduralTextures';
 import { yawFromDirection } from '../../core/cameraMath';
+import { QUALITY } from '../../art/quality';
 import type { Atmosphere } from '../../art/atmosphere';
 
 const WALL_HEIGHT = 2;
@@ -188,7 +189,7 @@ const MazeArchitecture = ({ maze, dressing, atmosphere }: MazeArchitectureProps)
       t.repeat.set(0.5, 0.5);
       t.needsUpdate = true;
     }
-    return new MeshStandardMaterial({ map, bumpMap, bumpScale: 2, color: '#8d877c', roughness: 0.95 });
+    return new MeshStandardMaterial({ map, bumpMap, bumpScale: 2, color: '#b1aa9c', roughness: 0.95 });
   }, [textures, atmosphere.snowCover]);
   const rubbleGeometry = useMemo(() => new DodecahedronGeometry(1, 0), []);
   const stoneMaterial = useMemo(
@@ -247,7 +248,13 @@ const MazeArchitecture = ({ maze, dressing, atmosphere }: MazeArchitectureProps)
         <WallVariant key={variant} specs={specs} variant={variant} />
       ))}
       <InstancedSet specs={capSpecs} geometry={capGeometry} material={capMaterial} name="wall-caps" />
-      <InstancedSet specs={merlonSpecs} geometry={merlonGeometry} material={capMaterial} name="merlons" />
+      <InstancedSet
+        specs={merlonSpecs}
+        geometry={merlonGeometry}
+        material={capMaterial}
+        name="merlons"
+        castShadow={QUALITY.propShadows}
+      />
       <InstancedSet
         specs={rubbleSpecs}
         geometry={rubbleGeometry}

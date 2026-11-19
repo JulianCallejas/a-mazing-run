@@ -17,6 +17,11 @@ declare global {
     __mazeEngine?: unknown;
     /** Debug-only (?debug): audio system for QA. */
     __mazeAudio?: unknown;
+    /** QA inspector contract (debug only). */
+    __THREE_GAME_DIAGNOSTICS__?: {
+      frame: number;
+      renderer: { calls: number; triangles: number; geometries: number; textures: number };
+    };
   }
 }
 
@@ -28,6 +33,7 @@ declare global {
  */
 const RenderDiagnosticsProbe = () => {
   useFrame(({ gl }) => {
+    const frame = (window.__THREE_GAME_DIAGNOSTICS__?.frame ?? 0) + 1;
     gl.info.autoReset = false;
     const { render, memory, programs } = gl.info;
     window.__mazeDiagnostics = {
@@ -38,6 +44,11 @@ const RenderDiagnosticsProbe = () => {
       programs: programs?.length ?? 0,
       pixelRatio: gl.getPixelRatio(),
       shadowMap: gl.shadowMap.enabled,
+    };
+    const d = window.__mazeDiagnostics;
+    window.__THREE_GAME_DIAGNOSTICS__ = {
+      frame,
+      renderer: { calls: d.calls, triangles: d.triangles, geometries: d.geometries, textures: d.textures },
     };
     gl.info.reset();
   }, 2);

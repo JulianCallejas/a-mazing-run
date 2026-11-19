@@ -170,7 +170,7 @@ const createWallTexture = (variant: number): SurfaceTextures => {
         bump.ctx,
         random,
         { x, y, w, h },
-        { hue: 30 + variant * 5, sat: 7, light: 38 },
+        { hue: 30 + variant * 5, sat: 7, light: 43 },
         width,
         { gap: 7, moss: y > height * 0.7 ? 0.35 : 0.06, crackChance: 0.12 },
       );
@@ -222,7 +222,7 @@ const createFloorTexture = (): SurfaceTextures => {
         bump.ctx,
         random,
         { x, y, w, h },
-        { hue: 32, sat: 8, light: 27 },
+        { hue: 32, sat: 8, light: 34 },
         size,
         { gap: 6, moss: 0.25, crackChance: 0.18 },
       );

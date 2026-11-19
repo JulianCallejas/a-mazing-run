@@ -26,6 +26,7 @@ import { yawFromDirection } from '../../core/cameraMath';
 import { getTextures } from '../../art/proceduralTextures';
 import type { Atmosphere } from '../../art/atmosphere';
 import { setUniform } from './uniforms';
+import { QUALITY } from '../../art/quality';
 
 const MOUNT_HEIGHT = 1.25;
 const LIGHT_POOL_SIZE = 6;
@@ -239,8 +240,8 @@ const Torches = ({ torches, focus, atmosphere }: TorchesProps) => {
 
   return (
     <group name="torches">
-      <instancedMesh ref={plateRef} args={[resources.plateGeometry, resources.iron, count]} castShadow />
-      <instancedMesh ref={handleRef} args={[resources.handleGeometry, resources.wood, count]} castShadow />
+      <instancedMesh ref={plateRef} args={[resources.plateGeometry, resources.iron, count]} castShadow={QUALITY.propShadows} />
+      <instancedMesh ref={handleRef} args={[resources.handleGeometry, resources.wood, count]} castShadow={QUALITY.propShadows} />
       <instancedMesh ref={cupRef} args={[resources.cupGeometry, resources.iron, count]} />
       <instancedMesh ref={outerFlameRef} args={[resources.outerFlameGeometry, resources.outerFlame, count]} />
       <instancedMesh ref={innerFlameRef} args={[resources.outerFlameGeometry, resources.innerFlame, count]} />

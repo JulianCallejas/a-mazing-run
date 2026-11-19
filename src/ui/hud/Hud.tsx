@@ -166,7 +166,7 @@ const Hud = ({
           <div className="absolute inset-x-0 top-[18%] flex justify-center px-4">
             <p
               key={banner.id}
-              className={`animate-banner font-display text-4xl sm:text-5xl text-center drop-shadow-[0_2px_8px_rgb(0_0_0/0.9)] ${
+              className={`animate-banner font-display text-3xl sm:text-5xl text-center drop-shadow-[0_2px_8px_rgb(0_0_0/0.9)] ${
                 banner.tone === 'danger' ? 'text-ember-400' : 'title-gilded'
               }`}
               role="status"

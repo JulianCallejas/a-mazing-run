@@ -17,6 +17,7 @@ import {
   type BufferGeometry,
   type Material,
 } from 'three';
+import { mergeStaticParts } from './mergeParts';
 
 /** Named pivots the animation layer drives. All rotate about local X unless noted. */
 export interface HeroJoints {
@@ -201,6 +202,9 @@ export const buildHero = (): CharacterModel<HeroJoints> => {
   const lanternLight = new PointLight('#ffbe73', 2.2, 4.5, 1.6);
   lanternLight.name = 'lanternLight';
   cage.add(lanternLight);
+
+  // Fewer draw calls; the flame core is scaled per frame so it stays separate.
+  mergeStaticParts(root, new Set([lanternCore]));
 
   return {
     root,
