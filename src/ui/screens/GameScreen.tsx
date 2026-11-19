@@ -14,6 +14,8 @@ import CameraRig, { type CameraRigState } from '../../game/scene/CameraRig';
 import MazeWorld from '../../game/scene/MazeWorld';
 import { GuardianAvatar, PlayerAvatar } from '../../game/scene/Avatars';
 import { useGameInput } from '../../game/scene/useGameInput';
+import RenderDiagnosticsProbe from '../../game/scene/RenderDiagnostics';
+import { diagnosticsEnabled } from '../../game/scene/diagnostics';
 import MedievalButton from '../components/MedievalButton';
 
 /** Faces the camera down the first open corridor from the start cell. */
@@ -46,6 +48,7 @@ const GameScreen: React.FC = () => {
   const [status, setStatus] = useState<GameStatus>('ready');
   const [result, setResult] = useState<ScoreEntry | null>(null);
   const timeLabel = useRef<HTMLSpanElement>(null);
+  const [showDiagnostics] = useState(diagnosticsEnabled);
   const { engine, rig } = run;
 
   const syncStatus = useCallback(() => setStatus(engine.status), [engine]);
@@ -216,10 +219,11 @@ const GameScreen: React.FC = () => {
         </div>
       )}
 
-      <Canvas shadows camera={{ fov: 68, near: 0.05, far: 200 }}>
+      <Canvas shadows="soft" dpr={[1, 2]} camera={{ fov: 68, near: 0.05, far: 320 }}>
         <GameLoop engine={engine} onEvents={handleEvents} onFrame={handleFrame} />
         <CameraRig key={run.id} engine={engine} mode={cameraMode} rig={rig} />
-        <MazeWorld grid={engine.maze.grid} effect={visualEffect} />
+        <MazeWorld engine={engine} effect={visualEffect} />
+        {showDiagnostics && <RenderDiagnosticsProbe />}
         <PlayerAvatar actor={engine.player} />
         {engine.enemies.map((enemy) => (
           <GuardianAvatar key={enemy.id} actor={enemy} />
