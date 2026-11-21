@@ -21,6 +21,10 @@ const wrapPi = (angle: number): number => {
   return ((((angle + Math.PI) % twoPi) + twoPi) % twoPi) - Math.PI;
 };
 
+/** The same heading as `angle`, shifted by whole turns to sit closest to `reference` (shortest-arc targets). */
+export const equivalentYaw = (angle: number, reference: number): number =>
+  angle + Math.round((reference - angle) / (Math.PI * 2)) * Math.PI * 2;
+
 /** Frame-rate independent exponential damping along the shortest arc. */
 export const dampAngle = (current: number, target: number, lambda: number, dt: number): number =>
   current + wrapPi(target - current) * (1 - Math.exp(-lambda * dt));

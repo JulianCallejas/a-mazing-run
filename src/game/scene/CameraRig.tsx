@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { MathUtils, PerspectiveCamera, Vector3 } from 'three';
 import type { GameEngine } from '../core/engine';
 import type { CameraMode } from '../core/controls';
-import { forwardFromYaw, occludedDistance } from '../core/cameraMath';
+import { equivalentYaw, forwardFromYaw, occludedDistance } from '../core/cameraMath';
 
 /** Mutable camera intent shared with the input layer (no React state). */
 export interface CameraRigState {
@@ -41,7 +41,7 @@ const MAX_CHASE_HEIGHT = 7;
 const CameraRig = ({ engine, mode, rig }: CameraRigProps) => {
   const canvas = useThree((s) => s.gl.domElement);
 
-  const smooth = useRef({
+  const initialSmooth = () => ({
     yaw: rig.yawIndex * (Math.PI / 2),
     blend: mode === 'aerial' ? 1 : 0,
     zoom: rig.zoom,
@@ -50,6 +50,8 @@ const CameraRig = ({ engine, mode, rig }: CameraRigProps) => {
     height: CHASE_BASE_HEIGHT + rig.zoom * CHASE_HEIGHT_PER_ZOOM,
     initialized: false,
   });
+  const smooth = useRef(initialSmooth());
+  const currentEngine = useRef(engine);
   const vectors = useRef({
     third: new Vector3(),
     thirdLook: new Vector3(),
@@ -72,12 +74,21 @@ const CameraRig = ({ engine, mode, rig }: CameraRigProps) => {
   useFrame((state, rawDelta) => {
     const camera = state.camera as PerspectiveCamera;
     const dt = Math.min(rawDelta, 0.1);
+    // A new run reuses this rig: snap to its start instead of easing from the old run's
+    // camera pose (remounting by key left the previous rig ticking alongside this one).
+    if (currentEngine.current !== engine) {
+      currentEngine.current = engine;
+      smooth.current = initialSmooth();
+    }
     const s = smooth.current;
     const v = vectors.current;
     const player = engine.player.position;
     const { grid, width, height } = engine.maze;
 
-    s.yaw = MathUtils.damp(s.yaw, rig.yawIndex * (Math.PI / 2), 9, dt);
+    // Aerial is north-up: swing the chase yaw to north (shortest way) so the view never
+    // sweeps through an arbitrary angle while controls are already absolute.
+    const desiredYaw = mode === 'aerial' ? 0 : rig.yawIndex * (Math.PI / 2);
+    s.yaw = MathUtils.damp(s.yaw, equivalentYaw(desiredYaw, s.yaw), 9, dt);
     s.blend = MathUtils.damp(s.blend, mode === 'aerial' ? 1 : 0, 4.5, dt);
     s.zoom = MathUtils.damp(s.zoom, rig.zoom, 8, dt);
 

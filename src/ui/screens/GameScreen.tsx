@@ -225,7 +225,7 @@ const GameScreen: React.FC = () => {
       {/* The 3D canvas comes first in the DOM (QA tools sample the first canvas); HUD layers stack above via z-index. */}
       <Canvas shadows="soft" dpr={[1, QUALITY.maxDpr]} camera={{ fov: 68, near: 0.05, far: 320 }}>
         <GameLoop engine={engine} onEvents={handleEvents} onFrame={handleFrame} frozen={frozen} />
-        <CameraRig key={run.id} engine={engine} mode={cameraMode} rig={rig} />
+        <CameraRig engine={engine} mode={cameraMode} rig={rig} />
         <MazeWorld
           maze={engine.maze}
           focus={engine.player.position}

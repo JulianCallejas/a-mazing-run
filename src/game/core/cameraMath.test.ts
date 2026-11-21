@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dampAngle, forwardFromYaw, occludedDistance, yawFromDirection } from './cameraMath';
+import { dampAngle, equivalentYaw, forwardFromYaw, occludedDistance, yawFromDirection } from './cameraMath';
 import { mazeFromRows } from './testMaze';
 
 describe('forwardFromYaw / yawFromDirection', () => {
@@ -18,6 +18,20 @@ describe('forwardFromYaw / yawFromDirection', () => {
     expect(yawFromDirection('east')).toBeCloseTo(Math.PI / 2);
     expect(Math.abs(yawFromDirection('north'))).toBeCloseTo(Math.PI);
     expect(yawFromDirection('west')).toBeCloseTo(-Math.PI / 2);
+  });
+});
+
+describe('equivalentYaw', () => {
+  const TAU = Math.PI * 2;
+
+  it('returns the same heading expressed closest to the reference angle', () => {
+    expect(equivalentYaw(0, 3 * TAU + 0.2)).toBeCloseTo(3 * TAU);
+    expect(equivalentYaw(0, -2 * TAU - 0.4)).toBeCloseTo(-2 * TAU);
+    expect(equivalentYaw((3 * Math.PI) / 2, 0)).toBeCloseTo(-Math.PI / 2);
+  });
+
+  it('leaves an already-close angle unchanged', () => {
+    expect(equivalentYaw(Math.PI / 2, Math.PI / 2 + 0.1)).toBeCloseTo(Math.PI / 2);
   });
 });
 
