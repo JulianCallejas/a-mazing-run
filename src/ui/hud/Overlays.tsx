@@ -12,19 +12,28 @@ interface PauseOverlayProps {
   onExit: () => void;
 }
 
-/** Moves keyboard focus to the primary action when an overlay opens. */
-const useAutoFocus = <T extends HTMLElement>() => {
-  const ref = useRef<T>(null);
+/**
+ * Opens a native modal <dialog>: the browser makes the page inert, contains focus and
+ * renders it in the top layer. Focus then moves to the primary action.
+ */
+const useModalDialog = () => {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const primary = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    ref.current?.focus();
+    const el = dialog.current;
+    if (el && !el.open) el.showModal();
+    primary.current?.focus();
   }, []);
-  return ref;
+  return { dialog, primary };
 };
 
+const DIALOG_CLASS =
+  'scrim fixed inset-0 z-20 m-0 h-dvh w-dvw max-h-none max-w-none items-center justify-center bg-transparent p-4 text-inherit open:flex';
+
 export const PauseOverlay = ({ soundEnabled, onResume, onRestart, onToggleSound, onExit }: PauseOverlayProps) => {
-  const primary = useAutoFocus<HTMLButtonElement>();
+  const { dialog, primary } = useModalDialog();
   return (
-    <div className="scrim absolute inset-0 z-20 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+    <dialog ref={dialog} className={DIALOG_CLASS} aria-labelledby="pause-title" onCancel={(e) => { e.preventDefault(); onResume(); }}>
       <div className="panel w-full max-w-sm p-7 text-center animate-rise">
         <h2 id="pause-title" className="title-gilded text-5xl">
           Paused
@@ -49,7 +58,7 @@ export const PauseOverlay = ({ soundEnabled, onResume, onRestart, onToggleSound,
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };
 
@@ -57,6 +66,10 @@ export const PauseOverlay = ({ soundEnabled, onResume, onRestart, onToggleSound,
 const useCountUp = (target: number, duration = 1100) => {
   const [value, setValue] = useState(0);
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setValue(target);
+      return;
+    }
     let frame = 0;
     const start = performance.now();
     const step = (now: number) => {
@@ -82,13 +95,13 @@ interface ResultOverlayProps {
 }
 
 export const ResultOverlay = ({ outcome, entry, rank, survived, difficulty, effect, onRetry, onExit }: ResultOverlayProps) => {
-  const primary = useAutoFocus<HTMLButtonElement>();
+  const { dialog, primary } = useModalDialog();
   const score = useCountUp(entry?.score ?? 0);
   const won = outcome === 'won';
   const weather = weatherInfo(effect);
 
   return (
-    <div className="scrim animate-reveal absolute inset-0 z-20 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="result-title">
+    <dialog ref={dialog} className={`${DIALOG_CLASS} animate-reveal`} aria-labelledby="result-title" onCancel={(e) => e.preventDefault()}>
       <div className="panel w-full max-w-md p-7 sm:p-8 text-center animate-rise">
         <div className="rule-ornament" aria-hidden="true">
           {won ? <Crown className="w-6 h-6" /> : <Skull className="w-6 h-6 text-ember-400" />}
@@ -144,6 +157,6 @@ export const ResultOverlay = ({ outcome, entry, rank, survived, difficulty, effe
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

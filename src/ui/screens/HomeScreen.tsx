@@ -20,7 +20,7 @@ const HomeScreen: React.FC = () => {
   const selected = difficultyInfo(difficulty);
 
   return (
-    <div className="min-h-screen px-5 py-7 sm:px-10 lg:px-14 lg:py-9 flex flex-col">
+    <div className="min-h-dvh px-5 py-7 sm:px-10 lg:px-14 lg:py-9 flex flex-col">
       <header className="flex items-start justify-between gap-6 animate-rise">
         <div>
           <h1 className="title-gilded text-6xl sm:text-7xl lg:text-8xl leading-[0.9]">A-mazing Run</h1>

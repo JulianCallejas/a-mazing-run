@@ -12,7 +12,7 @@ interface ScreenShellProps {
 const ScreenShell = ({ title, subtitle, children }: ScreenShellProps) => {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen px-5 py-8 sm:px-10 lg:px-14 lg:py-12">
+    <div className="min-h-dvh px-5 py-8 sm:px-10 lg:px-14 lg:py-12">
       <div className="max-w-4xl animate-rise">
         <button type="button" className="btn btn-ghost px-4 py-2" onClick={() => navigate('/')}>
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />

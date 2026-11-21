@@ -221,7 +221,7 @@ const GameScreen: React.FC = () => {
   const handleExit = () => navigate('/');
 
   return (
-    <div className="w-full h-screen relative overflow-hidden bg-night-950">
+    <div className="w-full h-dvh relative overflow-hidden bg-night-950">
       {/* The 3D canvas comes first in the DOM (QA tools sample the first canvas); HUD layers stack above via z-index. */}
       <Canvas shadows="soft" dpr={[1, QUALITY.maxDpr]} camera={{ fov: 68, near: 0.05, far: 320 }}>
         <GameLoop engine={engine} onEvents={handleEvents} onFrame={handleFrame} frozen={frozen} />

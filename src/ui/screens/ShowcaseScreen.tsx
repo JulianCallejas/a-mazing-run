@@ -57,7 +57,7 @@ const ShowcaseScreen: React.FC = () => {
   const atmosphere = ATMOSPHERES.NONE;
 
   return (
-    <div className="w-full h-screen bg-black">
+    <div className="w-full h-dvh bg-black">
       <Canvas shadows="soft" camera={{ fov: 40, position: [0, 1.5, 4.2] }} onCreated={({ camera }) => camera.lookAt(0, 0.65, 0)}>
         <color attach="background" args={['#0b0f1c']} />
         <Lighting maze={SHOWCASE_MAZE} atmosphere={atmosphere} />

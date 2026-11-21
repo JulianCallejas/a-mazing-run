@@ -20,7 +20,7 @@ const Backdrop = () => {
 };
 
 const RouteLoading = () => (
-  <div className="min-h-screen flex items-center justify-center" role="status">
+  <div className="min-h-dvh flex items-center justify-center" role="status">
     <p className="font-label text-xl text-parchment-300 animate-flicker">Lighting the torches…</p>
   </div>
 );
