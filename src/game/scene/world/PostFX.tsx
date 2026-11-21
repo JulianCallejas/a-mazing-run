@@ -29,6 +29,24 @@ const VignetteShader = {
 };
 
 /**
+ * Bloom blurs across the whole frame, so a single NaN/Infinity pixel from any shader
+ * would black out large areas. Comparisons with NaN are false, so those become 0.
+ */
+const SanitizeShader = {
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: VignetteShader.vertexShader,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    varying vec2 vUv;
+    float clean(float v) { return v >= 0.0 ? min(v, 64.0) : 0.0; }
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      gl_FragColor = vec4(clean(c.r), clean(c.g), clean(c.b), clean(c.a));
+    }
+  `,
+};
+
+/**
  * Finishing pass: HDR render (MSAA) -> bloom on authored emissives only
  * (threshold 0.9) -> subtle vignette -> tone mapping/sRGB output.
  * Priority 1 makes this component own the frame's render call.
@@ -45,7 +63,10 @@ const PostFX = () => {
     const fx = new EffectComposer(gl, target);
     fx.addPass(new RenderPass(scene, camera));
     // Mobile tier skips bloom to stay inside its draw-call budget.
-    if (QUALITY.bloom) fx.addPass(new UnrealBloomPass(new Vector2(256, 256), 0.6, 0.45, 0.9));
+    if (QUALITY.bloom) {
+      fx.addPass(new ShaderPass(SanitizeShader));
+      fx.addPass(new UnrealBloomPass(new Vector2(256, 256), 0.6, 0.45, 0.9));
+    }
     fx.addPass(new ShaderPass(VignetteShader));
     fx.addPass(new OutputPass());
     return fx;

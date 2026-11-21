@@ -41,10 +41,12 @@ const PORTAL_FRAGMENT = /* glsl */ `
 
     vec2 c = vec2(p.x, (p.y - 0.45) * 1.6);
     float r = length(c);
-    float a = atan(c.y, c.x);
+    // Offset keeps atan defined at the exact centre (atan(0, 0) is undefined in GLSL).
+    float a = atan(c.y, c.x + 1e-5);
     float swirl = 0.5 + 0.5 * sin(a * 4.0 + r * 9.0 - uTime * 2.6);
     float rings = 0.5 + 0.5 * sin(r * 22.0 - uTime * 4.0);
-    float core = smoothstep(1.1, 0.0, r);
+    // smoothstep needs edge0 < edge1; reversed edges are undefined behaviour in GLSL.
+    float core = 1.0 - smoothstep(0.0, 1.1, r);
     vec3 gold = vec3(2.6, 1.5, 0.45);
     vec3 white = vec3(3.2, 2.8, 1.9);
     vec3 col = mix(gold * 0.35, mix(gold, white, core), swirl * 0.6 + rings * 0.2);
@@ -61,7 +63,9 @@ const BEAM_FRAGMENT = /* glsl */ `
   uniform float uTime;
   varying vec2 vUv;
   void main() {
-    float fade = pow(1.0 - vUv.y, 1.6) * smoothstep(0.0, 0.05, vUv.y);
+    // Interpolation can overshoot [0, 1] at the rims; pow(negative) is NaN and bloom spreads it.
+    float v = clamp(vUv.y, 0.0, 1.0);
+    float fade = pow(1.0 - v, 1.6) * smoothstep(0.0, 0.05, v);
     float shimmer = 0.75 + 0.25 * sin(vUv.y * 30.0 - uTime * 3.0 + vUv.x * 12.566);
     float a = fade * shimmer * 0.35;
     gl_FragColor = vec4(vec3(1.6, 1.0, 0.35) * a, a);
