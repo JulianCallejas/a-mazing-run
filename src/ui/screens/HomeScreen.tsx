@@ -6,7 +6,8 @@ import { highScores } from '../../game/core/highScores';
 import { formatTime } from '../../game/core/scoring';
 import { DIFFICULTY_ORDER, WEATHER_ORDER, difficultyInfo, weatherInfo } from '../options';
 import GuardianHelmIcon from '../components/GuardianHelmIcon';
-import InstallButton from '../components/InstallButton';
+import InstallHint from '../components/InstallHint';
+import InstallIconButton from '../components/InstallIconButton';
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -29,15 +30,18 @@ const HomeScreen: React.FC = () => {
             Escape the cursed labyrinth before its guardians wake.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-icon shrink-0"
-          onClick={toggleSound}
-          aria-label={soundEnabled ? 'Mute sound' : 'Unmute sound'}
-          title={soundEnabled ? 'Mute sound' : 'Unmute sound'}
-        >
-          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <InstallIconButton />
+          <button
+            type="button"
+            className="btn btn-icon shrink-0"
+            onClick={toggleSound}
+            aria-label={soundEnabled ? 'Mute sound' : 'Unmute sound'}
+            title={soundEnabled ? 'Mute sound' : 'Unmute sound'}
+          >
+            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </button>
+        </div>
       </header>
 
       <main className="mt-6 lg:mt-8 grid gap-8 lg:grid-cols-[minmax(0,30rem)_1fr_minmax(0,21rem)] items-start flex-1">
@@ -121,7 +125,7 @@ const HomeScreen: React.FC = () => {
               Lore & Credits
             </button>
           </nav>
-          <InstallButton />
+          <InstallHint />
         </section>
 
         <div className="hidden lg:block" />

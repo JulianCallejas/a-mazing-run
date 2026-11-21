@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import { Footprints, Map, Trophy } from 'lucide-react';
+import { Download, Footprints, Map, Trophy } from 'lucide-react';
 import ScreenShell from '../components/ScreenShell';
 import GuardianHelmIcon from '../components/GuardianHelmIcon';
 import { DIFFICULTY_ORDER, WEATHER_ORDER, difficultyInfo, weatherInfo } from '../options';
@@ -110,6 +110,25 @@ const InstructionsScreen: React.FC = () => (
         })}
       </ul>
       <p className="mt-3">The ten best escapes are kept in the Hall of Fame on this device.</p>
+    </Section>
+
+    <Section title="Install the app" icon={<Download className="w-5 h-5" aria-hidden="true" />}>
+      <p>Play full screen and offline by installing A-mazing Run on your device.</p>
+      <ul className="mt-3 space-y-1.5 list-disc pl-5">
+        <li>
+          <strong>Chrome, Edge, Android:</strong> use the download button at the top of the menu, or the install icon in
+          the address bar.
+        </li>
+        <li>
+          <strong>iPhone / iPad (Safari):</strong> tap Share, then Add to Home Screen.
+        </li>
+        <li>
+          <strong>Safari on Mac:</strong> choose File, then Add to Dock.
+        </li>
+        <li>
+          <strong>Firefox on desktop:</strong> installing is not supported; the game still works in the browser.
+        </li>
+      </ul>
     </Section>
   </ScreenShell>
 );

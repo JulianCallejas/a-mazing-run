@@ -69,7 +69,7 @@ pnpm dev        # http://localhost:5173
 
 A-mazing Run is an installable Progressive Web App and works offline after the first visit.
 
-- **Android / Chrome, desktop Chrome and Edge:** use the **Install the app** button on the home screen, or the browser's install icon in the address bar.
+- **Android / Chrome, desktop Chrome and Edge:** use the download button at the top of the menu, or the browser's install icon in the address bar.
 - **iPhone / iPad (Safari):** tap **Share**, then **Add to Home Screen**.
 - **Updates:** when a new version is ready, a **Reload** prompt appears on the menus. It never appears during a run.
 - **Testing the service worker:** it is disabled in `pnpm dev`. Use `pnpm build && pnpm preview`.
