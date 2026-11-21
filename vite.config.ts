@@ -2,10 +2,66 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      // 'prompt': a new service worker waits until the player accepts the reload,
+      // so an update never interrupts a run in progress.
+      registerType: 'prompt',
+      injectRegister: false,
+      includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon-180x180.png'],
+      manifest: {
+        name: 'A-mazing Run',
+        short_name: 'A-mazing Run',
+        description: 'Escape the cursed labyrinth before its guardians wake.',
+        lang: 'en',
+        start_url: '/',
+        scope: '/',
+        id: '/',
+        display: 'standalone',
+        orientation: 'any',
+        categories: ['games'],
+        theme_color: '#07080d',
+        background_color: '#07080d',
+        icons: [
+          { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
+        // The three.js vendor chunk is ~700 kB minified.
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
+        navigateFallback: '/index.html',
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'google-fonts-css' },
+          },
+          {
+            urlPattern: ({ url }) => url.origin === 'https://fonts.gstatic.com',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-files',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+      // The service worker is off in `pnpm dev`; test it with `pnpm build && pnpm preview`.
+      devOptions: { enabled: false },
+    }),
+  ],
   build: {
     // The three.js engine is one inherently large vendor chunk (~700 kB min,
     // ~180 kB gzip). It is split out so app updates don't invalidate it.
