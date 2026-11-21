@@ -1,5 +1,4 @@
-minimunReleaseAge: 7,200
-
+minimumReleaseAge: 7200
 overrides:
   browserslist: ^4.28.7
   source-map-js: ^1.2.2
