@@ -107,6 +107,13 @@
     color: var(--color-parchment-100);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
+    /* Installed-app feel: no pull-to-refresh or rubber-banding while playing. */
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Gestures on the game view must reach the game, not scroll or zoom the page. */
+  canvas {
+    touch-action: none;
   }
   button {
     cursor: pointer;

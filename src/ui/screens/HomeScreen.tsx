@@ -6,6 +6,7 @@ import { highScores } from '../../game/core/highScores';
 import { formatTime } from '../../game/core/scoring';
 import { DIFFICULTY_ORDER, WEATHER_ORDER, difficultyInfo, weatherInfo } from '../options';
 import GuardianHelmIcon from '../components/GuardianHelmIcon';
+import InstallButton from '../components/InstallButton';
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -120,6 +121,7 @@ const HomeScreen: React.FC = () => {
               Lore & Credits
             </button>
           </nav>
+          <InstallButton />
         </section>
 
         <div className="hidden lg:block" />

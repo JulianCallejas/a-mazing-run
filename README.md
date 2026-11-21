@@ -63,6 +63,16 @@ pnpm dev        # http://localhost:5173
 | `pnpm test` | Unit tests (Vitest) for the pure game core |
 | `pnpm typecheck` | TypeScript, app and config |
 | `pnpm lint` | ESLint, including the React Compiler hook rules |
+| `pnpm generate-pwa-assets` | Regenerates every PWA icon in `public/` from `public/favicon.svg` |
+
+## Install as an app (PWA)
+
+A-mazing Run is an installable Progressive Web App and works offline after the first visit.
+
+- **Android / Chrome, desktop Chrome and Edge:** use the **Install the app** button on the home screen, or the browser's install icon in the address bar.
+- **iPhone / iPad (Safari):** tap **Share**, then **Add to Home Screen**.
+- **Updates:** when a new version is ready, a **Reload** prompt appears on the menus. It never appears during a run.
+- **Testing the service worker:** it is disabled in `pnpm dev`. Use `pnpm build && pnpm preview`.
 
 ## Architecture
 
@@ -113,7 +123,9 @@ node .claude/skills/threejs-qa-release/scripts/inspect-threejs-canvas.mjs \
 `pnpm build` produces a static site in `dist/` for the root path (`base: '/'`).
 
 - The app uses client-side routing. Configure the host to serve `index.html` for unknown paths (`/game`, `/about`, …).
-- Fonts load from Google Fonts. Everything else is bundled.
+- Serve over HTTPS (required for the service worker and install). Do not cache `sw.js` or `manifest.webmanifest` aggressively (`Cache-Control: no-cache`), or updates will not reach players.
+- The PWA assumes deployment at the domain root (`start_url` and `scope` are `/`). Under a sub-path, set Vite `base` and the manifest values.
+- Fonts load from Google Fonts and are cached by the service worker after first use. Everything else is bundled.
 - Supported browsers: current evergreen browsers with WebGL 2.
 
 ## Credits

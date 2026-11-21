@@ -4,6 +4,7 @@ import HomeScreen from './ui/screens/HomeScreen';
 import MenuBackdrop from './ui/components/MenuBackdrop';
 import { diagnosticsEnabled } from './game/scene/diagnostics';
 import AudioBridge from './systems/AudioBridge';
+import UpdateToast from './ui/components/UpdateToast';
 
 // Secondary screens load on demand; the home screen and backdrop are eager.
 const InstructionsScreen = lazy(() => import('./ui/screens/InstructionsScreen'));
@@ -28,6 +29,7 @@ const RouteLoading = () => (
 const App: React.FC = () => (
   <Router>
     <AudioBridge />
+    <UpdateToast />
     <Backdrop />
     <Suspense fallback={<RouteLoading />}>
       <Routes>
