@@ -65,11 +65,9 @@ export const PauseOverlay = ({ soundEnabled, onResume, onRestart, onToggleSound,
 /** Animates a number from 0 to `target` over `duration` ms (ease-out). */
 const useCountUp = (target: number, duration = 1100) => {
   const [value, setValue] = useState(0);
+  const [reduceMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setValue(target);
-      return;
-    }
+    if (reduceMotion) return;
     let frame = 0;
     const start = performance.now();
     const step = (now: number) => {
@@ -79,8 +77,8 @@ const useCountUp = (target: number, duration = 1100) => {
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [target, duration]);
-  return value;
+  }, [target, duration, reduceMotion]);
+  return reduceMotion ? target : value;
 };
 
 interface ResultOverlayProps {
