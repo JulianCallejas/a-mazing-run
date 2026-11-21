@@ -1,0 +1,89 @@
+{
+  "url": "http://127.0.0.1:5188/game?debug",
+  "mode": "desktop",
+  "state": "victory",
+  "requestedState": "victory",
+  "appliedState": "victory",
+  "runId": "t9-pass-2",
+  "seed": 42,
+  "screenshotPath": "artifacts/t9-pass-2/desktop-victory.png",
+  "gpu": {
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (Intel)",
+    "softwareRendered": false
+  },
+  "result": {
+    "ok": true,
+    "reason": "nonblank",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 720
+    },
+    "drawingBuffer": {
+      "width": 1280,
+      "height": 720
+    },
+    "alphaPixels": 4096,
+    "variance": 239,
+    "colorBuckets": 66,
+    "metrics": {
+      "colorBuckets": 95,
+      "colorEntropyBits": 2.96,
+      "edgeDensity": 0.052,
+      "luminance": {
+        "mean": 20.8,
+        "p5": 8.1,
+        "p95": 39.8,
+        "contrast": 31.6
+      },
+      "dominantColorShare": 0.279,
+      "nonBackgroundShare": 0.721
+    },
+    "renderBudget": {
+      "tier": "desktop",
+      "note": "starting-point budget; adjust per game and document overrides",
+      "rows": [
+        {
+          "metric": "calls",
+          "actual": 120,
+          "limit": 300,
+          "ok": true
+        },
+        {
+          "metric": "triangles",
+          "actual": 68431,
+          "limit": 750000,
+          "ok": true
+        },
+        {
+          "metric": "geometries",
+          "actual": 71,
+          "limit": 300,
+          "ok": true
+        },
+        {
+          "metric": "textures",
+          "actual": 30,
+          "limit": 60,
+          "ok": true
+        }
+      ],
+      "withinBudget": true
+    },
+    "diagnostics": {
+      "frame": 52,
+      "renderer": {
+        "calls": 120,
+        "triangles": 68431,
+        "geometries": 71,
+        "textures": 30
+      }
+    }
+  },
+  "consoleErrors": [],
+  "pageErrors": [],
+  "consoleErrorCount": 0,
+  "pageErrorCount": 0
+}

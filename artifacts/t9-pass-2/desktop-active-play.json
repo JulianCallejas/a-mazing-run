@@ -1,0 +1,89 @@
+{
+  "url": "http://127.0.0.1:5188/game?debug",
+  "mode": "desktop",
+  "state": "active-play",
+  "requestedState": "active-play",
+  "appliedState": "active-play",
+  "runId": "t9-pass-2",
+  "seed": 42,
+  "screenshotPath": "artifacts/t9-pass-2/desktop-active-play.png",
+  "gpu": {
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (Intel)",
+    "softwareRendered": false
+  },
+  "result": {
+    "ok": true,
+    "reason": "nonblank",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 720
+    },
+    "drawingBuffer": {
+      "width": 1280,
+      "height": 720
+    },
+    "alphaPixels": 4096,
+    "variance": 252,
+    "colorBuckets": 153,
+    "metrics": {
+      "colorBuckets": 212,
+      "colorEntropyBits": 4.42,
+      "edgeDensity": 0.365,
+      "luminance": {
+        "mean": 36.3,
+        "p5": 12.4,
+        "p95": 93.4,
+        "contrast": 81.1
+      },
+      "dominantColorShare": 0.304,
+      "nonBackgroundShare": 0.696
+    },
+    "renderBudget": {
+      "tier": "desktop",
+      "note": "starting-point budget; adjust per game and document overrides",
+      "rows": [
+        {
+          "metric": "calls",
+          "actual": 139,
+          "limit": 300,
+          "ok": true
+        },
+        {
+          "metric": "triangles",
+          "actual": 71101,
+          "limit": 750000,
+          "ok": true
+        },
+        {
+          "metric": "geometries",
+          "actual": 96,
+          "limit": 300,
+          "ok": true
+        },
+        {
+          "metric": "textures",
+          "actual": 30,
+          "limit": 60,
+          "ok": true
+        }
+      ],
+      "withinBudget": true
+    },
+    "diagnostics": {
+      "frame": 56,
+      "renderer": {
+        "calls": 139,
+        "triangles": 71101,
+        "geometries": 96,
+        "textures": 30
+      }
+    }
+  },
+  "consoleErrors": [],
+  "pageErrors": [],
+  "consoleErrorCount": 0,
+  "pageErrorCount": 0
+}

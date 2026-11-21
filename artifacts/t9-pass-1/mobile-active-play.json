@@ -1,0 +1,89 @@
+{
+  "url": "http://127.0.0.1:5188/game?debug",
+  "mode": "mobile",
+  "state": "active-play",
+  "requestedState": "active-play",
+  "appliedState": "active-play",
+  "runId": "t9-pass-1",
+  "seed": 42,
+  "screenshotPath": "artifacts/t9-pass-1/mobile-active-play.png",
+  "gpu": {
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (Intel)",
+    "softwareRendered": false
+  },
+  "result": {
+    "ok": true,
+    "reason": "nonblank",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 664
+    },
+    "drawingBuffer": {
+      "width": 585,
+      "height": 996
+    },
+    "alphaPixels": 4111,
+    "variance": 252,
+    "colorBuckets": 121,
+    "metrics": {
+      "colorBuckets": 189,
+      "colorEntropyBits": 4.41,
+      "edgeDensity": 0.331,
+      "luminance": {
+        "mean": 35.4,
+        "p5": 11.4,
+        "p95": 89,
+        "contrast": 77.6
+      },
+      "dominantColorShare": 0.252,
+      "nonBackgroundShare": 0.748
+    },
+    "renderBudget": {
+      "tier": "mobile",
+      "note": "starting-point budget; adjust per game and document overrides",
+      "rows": [
+        {
+          "metric": "calls",
+          "actual": 109,
+          "limit": 150,
+          "ok": true
+        },
+        {
+          "metric": "triangles",
+          "actual": 51804,
+          "limit": 300000,
+          "ok": true
+        },
+        {
+          "metric": "geometries",
+          "actual": 84,
+          "limit": 200,
+          "ok": true
+        },
+        {
+          "metric": "textures",
+          "actual": 18,
+          "limit": 40,
+          "ok": true
+        }
+      ],
+      "withinBudget": true
+    },
+    "diagnostics": {
+      "frame": 46,
+      "renderer": {
+        "calls": 109,
+        "triangles": 51804,
+        "geometries": 84,
+        "textures": 18
+      }
+    }
+  },
+  "consoleErrors": [],
+  "pageErrors": [],
+  "consoleErrorCount": 0,
+  "pageErrorCount": 0
+}

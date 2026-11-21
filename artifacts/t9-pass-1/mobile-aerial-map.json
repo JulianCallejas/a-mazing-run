@@ -1,0 +1,89 @@
+{
+  "url": "http://127.0.0.1:5188/game?debug",
+  "mode": "mobile",
+  "state": "aerial-map",
+  "requestedState": "aerial-map",
+  "appliedState": "aerial-map",
+  "runId": "t9-pass-1",
+  "seed": 42,
+  "screenshotPath": "artifacts/t9-pass-1/mobile-aerial-map.png",
+  "gpu": {
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (Intel)",
+    "softwareRendered": false
+  },
+  "result": {
+    "ok": true,
+    "reason": "nonblank",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 664
+    },
+    "drawingBuffer": {
+      "width": 585,
+      "height": 996
+    },
+    "alphaPixels": 4111,
+    "variance": 247,
+    "colorBuckets": 122,
+    "metrics": {
+      "colorBuckets": 184,
+      "colorEntropyBits": 4.47,
+      "edgeDensity": 0.338,
+      "luminance": {
+        "mean": 46.8,
+        "p5": 16.2,
+        "p95": 115.9,
+        "contrast": 99.7
+      },
+      "dominantColorShare": 0.265,
+      "nonBackgroundShare": 0.735
+    },
+    "renderBudget": {
+      "tier": "mobile",
+      "note": "starting-point budget; adjust per game and document overrides",
+      "rows": [
+        {
+          "metric": "calls",
+          "actual": 110,
+          "limit": 150,
+          "ok": true
+        },
+        {
+          "metric": "triangles",
+          "actual": 51806,
+          "limit": 300000,
+          "ok": true
+        },
+        {
+          "metric": "geometries",
+          "actual": 81,
+          "limit": 200,
+          "ok": true
+        },
+        {
+          "metric": "textures",
+          "actual": 19,
+          "limit": 40,
+          "ok": true
+        }
+      ],
+      "withinBudget": true
+    },
+    "diagnostics": {
+      "frame": 46,
+      "renderer": {
+        "calls": 110,
+        "triangles": 51806,
+        "geometries": 81,
+        "textures": 19
+      }
+    }
+  },
+  "consoleErrors": [],
+  "pageErrors": [],
+  "consoleErrorCount": 0,
+  "pageErrorCount": 0
+}

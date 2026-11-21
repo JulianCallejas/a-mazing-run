@@ -1,0 +1,89 @@
+{
+  "url": "http://127.0.0.1:5188/game?debug",
+  "mode": "mobile",
+  "state": "danger",
+  "requestedState": "danger",
+  "appliedState": "danger",
+  "runId": "t9-pass-2",
+  "seed": 42,
+  "screenshotPath": "artifacts/t9-pass-2/mobile-danger.png",
+  "gpu": {
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (Intel)",
+    "softwareRendered": false
+  },
+  "result": {
+    "ok": true,
+    "reason": "nonblank",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 664
+    },
+    "drawingBuffer": {
+      "width": 585,
+      "height": 996
+    },
+    "alphaPixels": 4111,
+    "variance": 250,
+    "colorBuckets": 142,
+    "metrics": {
+      "colorBuckets": 213,
+      "colorEntropyBits": 4.32,
+      "edgeDensity": 0.272,
+      "luminance": {
+        "mean": 33.2,
+        "p5": 13.3,
+        "p95": 79.4,
+        "contrast": 66
+      },
+      "dominantColorShare": 0.245,
+      "nonBackgroundShare": 0.755
+    },
+    "renderBudget": {
+      "tier": "mobile",
+      "note": "starting-point budget; adjust per game and document overrides",
+      "rows": [
+        {
+          "metric": "calls",
+          "actual": 136,
+          "limit": 150,
+          "ok": true
+        },
+        {
+          "metric": "triangles",
+          "actual": 55382,
+          "limit": 300000,
+          "ok": true
+        },
+        {
+          "metric": "geometries",
+          "actual": 86,
+          "limit": 200,
+          "ok": true
+        },
+        {
+          "metric": "textures",
+          "actual": 19,
+          "limit": 40,
+          "ok": true
+        }
+      ],
+      "withinBudget": true
+    },
+    "diagnostics": {
+      "frame": 46,
+      "renderer": {
+        "calls": 136,
+        "triangles": 55382,
+        "geometries": 86,
+        "textures": 19
+      }
+    }
+  },
+  "consoleErrors": [],
+  "pageErrors": [],
+  "consoleErrorCount": 0,
+  "pageErrorCount": 0
+}
