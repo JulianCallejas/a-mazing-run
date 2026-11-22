@@ -41,6 +41,8 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
+        // Plain files must not be answered with the SPA shell.
+        navigateFallbackDenylist: [/^\/robots\.txt$/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
