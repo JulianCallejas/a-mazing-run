@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { UserConfig } from 'vite';
 import viteConfig from '../../vite.config';
-import { normalizeBase, pwaBaseOptions, robotsDenylistPattern } from './basePath';
+import { normalizeBase, pwaBaseOptions, robotsDenylistPattern, siteUrl } from './basePath';
 
 async function resolveConfig(): Promise<UserConfig> {
   const factory = viteConfig as (env: { mode: string; command: 'build' }) => UserConfig | Promise<UserConfig>;
@@ -47,6 +47,18 @@ describe('pwaBaseOptions', () => {
     const o = pwaBaseOptions('/');
     expect(o.manifest.start_url).toBe('/');
     expect(o.navigateFallback).toBe('/index.html');
+  });
+});
+
+describe('siteUrl', () => {
+  it('joins origin and base into an absolute URL, defaulting the origin', () => {
+    expect(siteUrl('https://example.com/', '/app/')).toBe('https://example.com/app/');
+    expect(siteUrl(undefined, '/a-mazing-run/')).toBe('https://juliancallejas.github.io/a-mazing-run/');
+    expect(siteUrl('', '/')).toBe('https://juliancallejas.github.io/');
+  });
+
+  it.each(['example.com', 'https://example.com/sub', 'ftp://example.com'])('rejects %s', (value) => {
+    expect(() => siteUrl(value, '/')).toThrow(/SITE_ORIGIN/);
   });
 });
 
