@@ -27,7 +27,7 @@ const RouteLoading = () => (
 );
 
 const App: React.FC = () => (
-  <Router>
+  <Router basename={import.meta.env.BASE_URL}>
     <AudioBridge />
     <UpdateToast />
     <Backdrop />

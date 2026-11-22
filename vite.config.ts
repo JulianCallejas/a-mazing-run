@@ -5,7 +5,11 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  // GitHub Pages serves project sites under /<repo>/; CI sets BASE_PATH. Always ends with '/'.
+  const base = loadEnv(mode, '.', '').BASE_PATH || '/';
+  return {
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -20,9 +24,9 @@ export default defineConfig(({ mode }) => ({
         short_name: 'A-mazing Run',
         description: 'Escape the cursed labyrinth before its guardians wake.',
         lang: 'en',
-        start_url: '/',
-        scope: '/',
-        id: '/',
+        start_url: base,
+        scope: base,
+        id: base,
         display: 'standalone',
         orientation: 'any',
         categories: ['games'],
@@ -40,9 +44,9 @@ export default defineConfig(({ mode }) => ({
         // The three.js vendor chunk is ~700 kB minified.
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         cleanupOutdatedCaches: true,
-        navigateFallback: '/index.html',
+        navigateFallback: `${base}index.html`,
         // Plain files must not be answered with the SPA shell.
-        navigateFallbackDenylist: [/^\/robots\.txt$/],
+        navigateFallbackDenylist: [/robots\.txt$/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
@@ -84,4 +88,5 @@ export default defineConfig(({ mode }) => ({
     environment: 'node',
     include: ['src/**/*.test.ts'],
   },
-}));
+  };
+});
