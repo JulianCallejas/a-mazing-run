@@ -3,11 +3,12 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { normalizeBase, robotsDenylistPattern } from './src/utils/basePath';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  // GitHub Pages serves project sites under /<repo>/; CI sets BASE_PATH. Always ends with '/'.
-  const base = loadEnv(mode, '.', '').BASE_PATH || '/';
+  // GitHub Pages serves project sites under /<repo>/; CI sets BASE_PATH.
+  const base = normalizeBase(loadEnv(mode, '.', '').BASE_PATH);
   return {
   base,
   plugins: [
@@ -46,7 +47,7 @@ export default defineConfig(({ mode }) => {
         cleanupOutdatedCaches: true,
         navigateFallback: `${base}index.html`,
         // Plain files must not be answered with the SPA shell.
-        navigateFallbackDenylist: [/robots\.txt$/],
+        navigateFallbackDenylist: [robotsDenylistPattern(base)],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
