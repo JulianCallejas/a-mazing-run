@@ -1,17 +1,33 @@
-# A-mazing Run
+<p align="center">
+  <a href="https://juliancallejas.github.io/a-mazing-run/">
+    <img src="public/pwa-512x512.png" width="140" title="A-mazing Run" alt="A-mazing Run logo" />
+  </a>
+</p>
 
-**Escape the cursed labyrinth before its guardians wake.**
+<h1 align="center">A-mazing Run</h1>
 
-A 3D medieval maze game for the browser. You wake on a rune circle inside a night castle labyrinth that is generated fresh every run. Find the golden gate before the cursed knights hunt you down.
+<p align="center">
+  Escape the cursed labyrinth before its guardians wake.<br/>
+  A 3D medieval maze game that runs in your browser: no account, no backend, no download.
+</p>
 
-Built with React 19, React Three Fiber and Three.js. Every model, texture, sound and effect is procedural; the project ships no binary assets.
+<p align="center">
+  <a href="https://juliancallejas.github.io/a-mazing-run/"><strong>Play now</strong></a>
+</p>
 
-## Play
+<br/>
 
-```bash
-pnpm install
-pnpm dev        # http://localhost:5173
-```
+You wake on a rune circle inside a night castle labyrinth that is generated fresh every run. Find the golden gate before the cursed knights hunt you down. Built with React 19, React Three Fiber and Three.js. Every model, texture, sound and effect is procedural; the project ships no binary assets. It is part of the app family by { jc-develop }.
+
+<p align="center">
+  <img src="docs/screenshots/map-view.webp" alt="Map view of the castle labyrinth at night" width="820" />
+</p>
+
+---
+
+## How to play
+
+Reach the golden gate before a guardian catches you. The faster you escape, the higher your score.
 
 | Keys | Chase view | Map view |
 | --- | --- | --- |
@@ -26,6 +42,10 @@ pnpm dev        # http://localhost:5173
 - **Touch devices** get an on-screen pad. It sends the same game intents as the keyboard.
 - **Holding a direction** keeps you running.
 - **A turn pressed early** is remembered and taken at the next tile.
+
+| Danger | Victory | Mobile |
+| --- | --- | --- |
+| <img src="docs/screenshots/danger.webp" alt="A guardian closing in, red vignette" /> | <img src="docs/screenshots/victory.webp" alt="You Escaped! screen with Hall of Fame rank" /> | <img src="docs/screenshots/mobile.webp" alt="Mobile layout with on-screen pad" /> |
 
 ### Rules
 
@@ -53,7 +73,55 @@ pnpm dev        # http://localhost:5173
   - Footsteps, wall bumps, a horn when the guardians wake, thunder.
   - A heartbeat that speeds up as danger rises.
 
-## Scripts
+> Fonts are the only thing that calls an external service (Google Fonts, cached by the service worker after first use). Your scores never leave the browser.
+
+---
+
+## Install as an app (PWA)
+
+A-mazing Run is an installable Progressive Web App and works offline after the first visit.
+
+- **Android / Chrome, desktop Chrome and Edge:** use the download button at the top of the menu, or the browser's install icon in the address bar.
+- **iPhone / iPad (Safari):** tap **Share**, then **Add to Home Screen**.
+- **Updates:** when a new version is ready, a **Reload** prompt appears on the menus. It never appears during a run.
+- **Offline:** the first visit installs the service worker, and the page is served from it from the next load on, so offline play works from the second visit.
+- **Testing the service worker:** it is disabled in `pnpm dev` unless you run `PWA_DEV=true pnpm dev`. The reliable check is `pnpm build && pnpm preview`.
+
+---
+
+<p align="center">
+  <img src="docs/screenshots/danger.webp" title="A-mazing Run" alt="A-mazing Run" width="720" />
+</p>
+
+<br/>
+
+## Built with
+
+| Area | Technology |
+| --- | --- |
+| App | [React 19](https://react.dev), [TypeScript](https://www.typescriptlang.org), [Vite](https://vite.dev) |
+| 3D | [Three.js](https://threejs.org), [React Three Fiber](https://r3f.docs.pmnd.rs) |
+| Styling | [Tailwind CSS 4](https://tailwindcss.com), [Lucide](https://lucide.dev) |
+| State and routing | [Zustand](https://zustand-demo.pmnd.rs), [React Router 7](https://reactrouter.com) |
+| Audio | Procedural Web Audio |
+| PWA | [vite-plugin-pwa](https://vite-pwa-org.netlify.app), [Workbox](https://developer.chrome.com/docs/workbox) |
+| Tests | [Vitest](https://vitest.dev), [Playwright](https://playwright.dev) (QA captures) |
+| Package manager | [pnpm](https://pnpm.io) |
+
+---
+
+## Run it locally
+
+You need [Node.js](https://nodejs.org) 24 and [pnpm](https://pnpm.io/installation).
+
+```bash
+git clone https://github.com/JulianCallejas/a-mazing-run.git
+cd a-mazing-run
+pnpm install
+pnpm dev        # http://localhost:5173
+```
+
+### Scripts
 
 | Command | What it does |
 | --- | --- |
@@ -65,15 +133,7 @@ pnpm dev        # http://localhost:5173
 | `pnpm lint` | ESLint, including the React Compiler hook rules |
 | `pnpm generate-pwa-assets` | Regenerates every PWA icon in `public/` from `public/favicon.svg` |
 
-## Install as an app (PWA)
-
-A-mazing Run is an installable Progressive Web App and works offline after the first visit.
-
-- **Android / Chrome, desktop Chrome and Edge:** use the download button at the top of the menu, or the browser's install icon in the address bar.
-- **iPhone / iPad (Safari):** tap **Share**, then **Add to Home Screen**.
-- **Updates:** when a new version is ready, a **Reload** prompt appears on the menus. It never appears during a run.
-- **Offline:** the first visit installs the service worker, and the page is served from it from the next load on, so offline play works from the second visit.
-- **Testing the service worker:** it is disabled in `pnpm dev` unless you run `PWA_DEV=true pnpm dev`. The reliable check is `pnpm build && pnpm preview`.
+---
 
 ## Architecture
 
@@ -102,7 +162,7 @@ src/
 - **The camera has a single owner.** `CameraRig` follows the hero with damping above the wall tops and climbs to keep line of sight when a wall stands behind.
 - **One quality tier per device.** Touch-first or narrow screens drop prop shadows and bloom, use a 1024 shadow map and cap DPR at 1.5. This keeps them inside the mobile render budget.
 
-## QA tooling (debug only)
+### QA tooling (debug only)
 
 Load the app with `?debug` (for example `/?debug`) to enable:
 
@@ -119,16 +179,24 @@ node .claude/skills/threejs-qa-release/scripts/inspect-threejs-canvas.mjs \
   --manifest artifacts/evidence.json --url "http://127.0.0.1:5188/game?debug" --seed 42
 ```
 
+---
+
 ## Deploy
 
-`pnpm build` produces a static site in `dist/` for the root path (`base: '/'`).
+Every push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): lint, typecheck, tests, build and publish to GitHub Pages. In the repository, set **Settings → Pages → Source** to **GitHub Actions** once.
 
-- The app uses client-side routing. Configure the host to serve `index.html` for unknown paths (`/game`, `/about`, …).
-- Serve over HTTPS (required for the service worker and install). Do not cache `sw.js` or `manifest.webmanifest` aggressively (`Cache-Control: no-cache`), or updates will not reach players.
-- The PWA assumes deployment at the domain root (`start_url` and `scope` are `/`). Under a sub-path, set Vite `base` and the manifest values.
-- Fonts load from Google Fonts and are cached by the service worker after first use. Everything else is bundled.
-- Supported browsers: current evergreen browsers with WebGL 2.
+- **Base path:** the workflow builds with `BASE_PATH=/<repo>/`. For any host that serves the app from the domain root, build without it (`base` defaults to `/`). The router, the manifest (`start_url`, `scope`, `id`) and the service worker fallback all follow that value.
+- **Client-side routing:** the workflow copies `index.html` to `404.html` so GitHub Pages serves the app on routes like `/game` or `/about`. On other hosts, configure `index.html` as the fallback for unknown paths.
+- **HTTPS:** required for the service worker and install. Do not cache `sw.js` or `manifest.webmanifest` aggressively (`Cache-Control: no-cache`), or updates will not reach players.
+- **Fonts:** loaded from Google Fonts and cached by the service worker after first use. Everything else is bundled.
+- **Browsers:** current evergreen browsers with WebGL 2.
 
-## Credits
+---
 
-Crafted by [jc-develop](https://jc-develop.com).
+#### 🌟 Thank you for stopping by. Every labyrinth has a way out, so keep running until you find yours.
+
+<p align="center">
+<a href="https://github.com/JulianCallejas">
+  <img src="https://res.cloudinary.com/dphleqb5t/image/upload/v1740784502/github-jc-develop/JC-LOGO-Horizontal-170-50-thin-github_uu3b5n.svg" width="170" alt="{ jc - develop }" />
+</a>
+</p>
