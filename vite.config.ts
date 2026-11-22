@@ -3,12 +3,13 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { normalizeBase, robotsDenylistPattern } from './src/utils/basePath';
+import { normalizeBase, pwaBaseOptions } from './src/utils/basePath';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // GitHub Pages serves project sites under /<repo>/; CI sets BASE_PATH.
   const base = normalizeBase(loadEnv(mode, '.', '').BASE_PATH);
+  const pwa = pwaBaseOptions(base);
   return {
   base,
   plugins: [
@@ -25,9 +26,7 @@ export default defineConfig(({ mode }) => {
         short_name: 'A-mazing Run',
         description: 'Escape the cursed labyrinth before its guardians wake.',
         lang: 'en',
-        start_url: base,
-        scope: base,
-        id: base,
+        ...pwa.manifest,
         display: 'standalone',
         orientation: 'any',
         categories: ['games'],
@@ -45,9 +44,9 @@ export default defineConfig(({ mode }) => {
         // The three.js vendor chunk is ~700 kB minified.
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         cleanupOutdatedCaches: true,
-        navigateFallback: `${base}index.html`,
-        // Plain files must not be answered with the SPA shell.
-        navigateFallbackDenylist: [robotsDenylistPattern(base)],
+        // Fallback and the robots.txt denylist (plain files must not get the SPA shell).
+        navigateFallback: pwa.navigateFallback,
+        navigateFallbackDenylist: pwa.navigateFallbackDenylist,
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
