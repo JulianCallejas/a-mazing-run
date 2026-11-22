@@ -16,6 +16,21 @@ export function normalizeBase(raw: string | undefined): string {
   return trimmed ? `/${trimmed}/` : '/';
 }
 
+/** Production origin used for canonical and social-preview URLs unless SITE_ORIGIN overrides it. */
+export const DEFAULT_SITE_ORIGIN = 'https://juliancallejas.github.io';
+
+/**
+ * Absolute, trailing-slash URL of the deployed app. Canonical, Open Graph and
+ * Twitter tags must be absolute: crawlers do not resolve them against the base.
+ */
+export function siteUrl(origin: string | undefined, base: string): string {
+  const value = (origin || DEFAULT_SITE_ORIGIN).replace(/\/+$/, '');
+  if (!/^https?:\/\/[^/\s]+$/i.test(value)) {
+    throw new Error(`Invalid SITE_ORIGIN "${origin}": use an origin such as 'https://example.com' (no path).`);
+  }
+  return `${value}${base}`;
+}
+
 /** Matches robots.txt at the app base only, so the SPA shell never answers it. */
 export function robotsDenylistPattern(base: string): RegExp {
   const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

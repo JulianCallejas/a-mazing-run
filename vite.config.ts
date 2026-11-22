@@ -3,18 +3,25 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { normalizeBase, pwaBaseOptions } from './src/utils/basePath';
+import { normalizeBase, pwaBaseOptions, siteUrl } from './src/utils/basePath';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, '.', '');
   // GitHub Pages serves project sites under /<repo>/; CI sets BASE_PATH.
-  const base = normalizeBase(loadEnv(mode, '.', '').BASE_PATH);
+  const base = normalizeBase(env.BASE_PATH);
   const pwa = pwaBaseOptions(base);
+  const site = siteUrl(env.SITE_ORIGIN, base);
   return {
   base,
   plugins: [
     react(),
     tailwindcss(),
+    {
+      // Fills %SITE_URL% in index.html (canonical, Open Graph, JSON-LD) with the absolute app URL.
+      name: 'site-url',
+      transformIndexHtml: (html: string) => html.replaceAll('%SITE_URL%', site),
+    },
     VitePWA({
       // 'prompt': a new service worker waits until the player accepts the reload,
       // so an update never interrupts a run in progress.
@@ -41,6 +48,8 @@ export default defineConfig(({ mode }) => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
+        // Only crawlers fetch the social preview image; players never need it offline.
+        globIgnores: ['og-image.png'],
         // The three.js vendor chunk is ~700 kB minified.
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         cleanupOutdatedCaches: true,
