@@ -72,7 +72,8 @@ A-mazing Run is an installable Progressive Web App and works offline after the f
 - **Android / Chrome, desktop Chrome and Edge:** use the download button at the top of the menu, or the browser's install icon in the address bar.
 - **iPhone / iPad (Safari):** tap **Share**, then **Add to Home Screen**.
 - **Updates:** when a new version is ready, a **Reload** prompt appears on the menus. It never appears during a run.
-- **Testing the service worker:** it is disabled in `pnpm dev`. Use `pnpm build && pnpm preview`.
+- **Offline:** the first visit installs the service worker, and the page is served from it from the next load on, so offline play works from the second visit.
+- **Testing the service worker:** it is disabled in `pnpm dev` unless you run `PWA_DEV=true pnpm dev`. The reliable check is `pnpm build && pnpm preview`.
 
 ## Architecture
 

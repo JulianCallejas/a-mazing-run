@@ -28,8 +28,14 @@ export const useInstallPrompt = (): InstallPrompt => {
     // The event is single-use whatever the player chooses, so the store hands it out once.
     const event = store.consume();
     if (!event) return;
-    await event.prompt();
-    await event.userChoice;
+    try {
+      await event.prompt();
+      await event.userChoice;
+    } catch (error) {
+      // The browser refused to show the prompt (e.g. no user gesture). The event is spent,
+      // so the button hides until the browser offers installation again.
+      console.warn('Install prompt failed', error);
+    }
   }, [store]);
 
   const dismissHint = useCallback(() => {

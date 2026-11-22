@@ -1,11 +1,11 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     tailwindcss(),
@@ -58,8 +58,8 @@ export default defineConfig({
           },
         ],
       },
-      // The service worker is off in `pnpm dev`; test it with `pnpm build && pnpm preview`.
-      devOptions: { enabled: false },
+      // Off in `pnpm dev` by default; opt in with `PWA_DEV=true pnpm dev`.
+      devOptions: { enabled: loadEnv(mode, '.', '').PWA_DEV === 'true' },
     }),
   ],
   build: {
@@ -82,4 +82,4 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
   },
-});
+}));
