@@ -67,6 +67,11 @@ const InstructionsScreen: React.FC = () => (
           </tbody>
         </table>
       </div>
+      <p className="mt-3 text-sm">
+        <strong>Touch screens:</strong> swipe to move and tap to stop. Chase view: swipe up to walk forward, down
+        to walk back, left or right to turn once. Map view: swipe in the direction you want to go — you keep
+        moving until you swipe another way or tap.
+      </p>
       <p className="mt-3 text-sm">Mouse wheel zooms the chase camera. The minimap reveals only the halls you have walked.</p>
     </Section>
 
@@ -119,7 +124,7 @@ const InstructionsScreen: React.FC = () => (
           );
         })}
       </ul>
-      <p className="mt-3">The ten best escapes are kept in the Hall of Fame on this device.</p>
+      <p className="mt-3">The twenty best escapes are kept in the Hall of Fame on this device, saved in a long-lived cookie that is renewed every time you play.</p>
     </Section>
 
     <Section title="Install the app" icon={<Download className="w-5 h-5" aria-hidden="true" />}>

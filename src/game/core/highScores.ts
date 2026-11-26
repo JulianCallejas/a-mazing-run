@@ -1,9 +1,10 @@
 import { GAME_CONFIG } from '../../utils/constants';
+import { createCookieStorage, createReplicatedStorage } from '../../utils/persistentStorage';
 import { calculateScore, type Difficulty, type VisualEffect } from './scoring';
 
 /** Entries saved before the efficiency formula lack `optimalTime` and are discarded on read. */
 export const HIGH_SCORES_STORAGE_KEY = 'amazing-run-scores';
-export const MAX_HIGH_SCORES = 10;
+export const MAX_HIGH_SCORES = 20;
 
 export interface ScoreEntry {
   id: string;
@@ -90,6 +91,75 @@ const toScoreEntry = (value: unknown): ScoreEntry | null => {
   return entry;
 };
 
+const COMPACT_PREFIX = 'v2~';
+const ENTRY_SEPARATOR = '~';
+const FIELD_SEPARATOR = '*';
+const MAX_NAME_LENGTH = 12;
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+/** Characters that survive cookie encoding untouched and cannot clash with the separators. */
+const safeToken = (text: string) => text.replace(/[^A-Za-z0-9._-]/g, '_');
+
+/**
+ * Compact text form used for persistence, small enough for 20 entries to fit
+ * a cookie (~4 KB): `v2~` then entries joined by `~`, fields by `*`:
+ * id, time, optimalTime, difficulty, visualEffect, epoch seconds, treasureBase,
+ * treasuresFound, treasuresTotal, name (ASCII letters, digits and `._-`, 12 max). The score is not stored: it is
+ * recomputed from the other fields on read, like the rest of the formula.
+ */
+export const encodeScores = (entries: ScoreEntry[]): string =>
+  COMPACT_PREFIX +
+  entries
+    .map((e) =>
+      [
+        safeToken(e.id),
+        round2(e.time),
+        round2(e.optimalTime),
+        e.difficulty,
+        e.visualEffect,
+        Math.floor(Date.parse(e.date) / 1000) || 0,
+        e.treasureBase ?? '',
+        e.treasuresFound ?? '',
+        e.treasuresTotal ?? '',
+        e.playerName ? safeToken(e.playerName.slice(0, MAX_NAME_LENGTH)) : '',
+      ].join(FIELD_SEPARATOR),
+    )
+    .join(ENTRY_SEPARATOR);
+
+const optionalCount = (field: string | undefined): number | undefined =>
+  field === undefined || field === '' ? undefined : Number(field);
+
+const fromCompact = (text: string): unknown => {
+  const [id, time, optimalTime, difficulty, visualEffect, seconds, base, found, total, name] =
+    text.split(FIELD_SEPARATOR);
+  const epoch = Number(seconds);
+  const date = new Date(epoch * 1000);
+  return {
+    id,
+    score: 0, // recomputed by rescore()
+    time: Number(time),
+    optimalTime: Number(optimalTime),
+    difficulty,
+    visualEffect,
+    date: seconds !== '' && !Number.isNaN(date.getTime()) ? date.toISOString() : '',
+    playerName: name || undefined,
+    treasureBase: optionalCount(base),
+    treasuresFound: optionalCount(found),
+    treasuresTotal: optionalCount(total),
+  };
+};
+
+/** Parses the compact form or the legacy JSON array of full entries; invalid input yields no entries. */
+export const decodeScores = (raw: string): ScoreEntry[] => {
+  const candidates: unknown[] = raw.startsWith(COMPACT_PREFIX)
+    ? raw.slice(COMPACT_PREFIX.length).split(ENTRY_SEPARATOR).filter(Boolean).map(fromCompact)
+    : (() => {
+        const parsed: unknown = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      })();
+  return candidates.map(toScoreEntry).filter((e): e is ScoreEntry => e !== null);
+};
+
 /** Scores are derived from time + settings, so recompute to follow the current formula. */
 const rescore = (entry: ScoreEntry): ScoreEntry =>
   entry.time > 0
@@ -116,11 +186,7 @@ export const createHighScoreStore = ({
     try {
       const raw = storage?.getItem(HIGH_SCORES_STORAGE_KEY);
       if (!raw) return [];
-      const parsed: unknown = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .map(toScoreEntry)
-        .filter((e): e is ScoreEntry => e !== null)
+      return decodeScores(raw)
         .map(rescore)
         .sort(byScoreDesc)
         .slice(0, MAX_HIGH_SCORES);
@@ -131,7 +197,7 @@ export const createHighScoreStore = ({
 
   const write = (entries: ScoreEntry[]): void => {
     try {
-      storage?.setItem(HIGH_SCORES_STORAGE_KEY, JSON.stringify(entries));
+      storage?.setItem(HIGH_SCORES_STORAGE_KEY, encodeScores(entries));
     } catch {
       // Storage can be unavailable (private mode, quota). Scores are a
       // convenience, so the run result is still returned to the caller.
@@ -144,9 +210,15 @@ export const createHighScoreStore = ({
     saveScore(run: FinishedRun): ScoreEntry {
       const entry: ScoreEntry = {
         id: createId(),
-        score: calculateScore(run.time, run.optimalTime, run.difficulty, run.visualEffect, run.treasureBase ?? 0),
-        time: run.time,
-        optimalTime: run.optimalTime,
+        score: calculateScore(
+          round2(run.time),
+          round2(run.optimalTime),
+          run.difficulty,
+          run.visualEffect,
+          run.treasureBase ?? 0,
+        ),
+        time: round2(run.time),
+        optimalTime: round2(run.optimalTime),
         difficulty: run.difficulty,
         visualEffect: run.visualEffect,
         date: now().toISOString(),
@@ -158,6 +230,12 @@ export const createHighScoreStore = ({
 
       write([...read(), entry].sort(byScoreDesc).slice(0, MAX_HIGH_SCORES));
       return entry;
+    },
+
+    /** Rewrites the stored scores so cookie expiry is renewed on every visit. */
+    refresh(): void {
+      const scores = read();
+      if (scores.length > 0) write(scores);
     },
 
     isHighScore(score: number): boolean {
@@ -179,11 +257,24 @@ export type HighScoreStore = ReturnType<typeof createHighScoreStore>;
 
 const browserStorage = (): KeyValueStorage | null => {
   try {
-    return typeof window === 'undefined' ? null : window.localStorage;
+    if (typeof window === 'undefined') return null;
+    return createReplicatedStorage(
+      [
+        createCookieStorage({
+          doc: document,
+          path: import.meta.env.BASE_URL,
+          secure: window.location.protocol === 'https:',
+        }),
+        window.localStorage,
+      ],
+      // A damaged cookie must not hide intact scores in localStorage.
+      (raw) => decodeScores(raw).length > 0,
+    );
   } catch {
     return null;
   }
 };
 
-/** App-wide store backed by localStorage. */
+/** App-wide store: a long-lived cookie, mirrored to localStorage (which also holds pre-cookie scores). */
 export const highScores = createHighScoreStore({ storage: browserStorage() });
+highScores.refresh();

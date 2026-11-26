@@ -45,18 +45,20 @@ describe('high score store', () => {
       visualEffect: 'FOG',
       date: NOW.toISOString(),
     });
-    expect(JSON.parse(storage.getItem(HIGH_SCORES_STORAGE_KEY) ?? '[]')).toEqual([entry]);
+    expect(storage.getItem(HIGH_SCORES_STORAGE_KEY)).toMatch(/^v2~/);
+    expect(makeStore().getTopScores()).toEqual([entry]);
   });
 
-  it('keeps only the top 10 scores sorted descending', () => {
+  it('keeps only the top 20 scores sorted descending', () => {
+    expect(MAX_HIGH_SCORES).toBe(20);
     const store = makeStore();
-    for (let time = 1; time <= 12; time++) {
+    for (let time = 1; time <= 24; time++) {
       store.saveScore({ time, optimalTime: 0.5, difficulty: 'MEDIUM', visualEffect: 'NONE' });
     }
 
     const scores = store.getTopScores();
     expect(scores).toHaveLength(MAX_HIGH_SCORES);
-    expect(scores.map((s) => s.time)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(scores.map((s) => s.time)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
   });
 
   it('discards entries saved before the efficiency formula (no optimalTime)', () => {
@@ -106,11 +108,11 @@ describe('high score store', () => {
     const store = makeStore();
     expect(store.isHighScore(1)).toBe(true);
 
-    for (let time = 1; time <= 10; time++) {
+    for (let time = 1; time <= 20; time++) {
       store.saveScore({ time, optimalTime: 0.5, difficulty: 'MEDIUM', visualEffect: 'NONE' });
     }
-    expect(store.isHighScore(75)).toBe(false);
-    expect(store.isHighScore(76)).toBe(true);
+    expect(store.isHighScore(38)).toBe(false);
+    expect(store.isHighScore(39)).toBe(true);
   });
 
   it('keeps working when storage throws (private mode / quota)', () => {
@@ -153,6 +155,77 @@ describe('high score store', () => {
     const [entry] = makeStore().getTopScores();
     expect(entry.score).toBe(750);
     expect(entry.treasureBase).toBeUndefined();
+  });
+
+  it('round-trips every field through the compact format, including treasure counts and a name', () => {
+    const store = makeStore();
+    const saved = store.saveScore({
+      time: 61.234,
+      optimalTime: 30.5,
+      difficulty: 'VERY_HARD',
+      visualEffect: 'SNOW',
+      playerName: 'Ana-1',
+      treasureBase: 400,
+      treasuresFound: 3,
+      treasuresTotal: 9,
+    });
+    const [read] = makeStore().getTopScores();
+    expect(read).toEqual(saved);
+    expect(read).toMatchObject({ time: 61.23, playerName: 'Ana-1' });
+  });
+
+  it('migrates scores saved as full JSON by older versions, then keeps them in the compact format', () => {
+    storage.setItem(
+      HIGH_SCORES_STORAGE_KEY,
+      JSON.stringify([
+        { id: 'old', score: 1, time: 10, optimalTime: 5, difficulty: 'MEDIUM', visualEffect: 'NONE', date: NOW.toISOString() },
+      ]),
+    );
+    const store = makeStore();
+    store.refresh();
+    expect(storage.getItem(HIGH_SCORES_STORAGE_KEY)).toMatch(/^v2~old\*10\*5\*MEDIUM\*NONE\*/);
+    expect(store.getTopScores()).toMatchObject([{ id: 'old', score: 750, date: NOW.toISOString() }]);
+  });
+
+  it('keeps 20 worst-case entries well under the 4 KB cookie limit', () => {
+    const store = createHighScoreStore({
+      storage,
+      now: () => NOW,
+      createId: () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+    });
+    for (let i = 0; i < 25; i++) {
+      store.saveScore({
+        time: 100 + i,
+        optimalTime: 50,
+        difficulty: 'VERY_HARD',
+        visualEffect: 'NONE',
+        playerName: 'ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ',
+        treasureBase: 1650,
+        treasuresFound: 9,
+        treasuresTotal: 9,
+      });
+    }
+    expect(store.getTopScores()).toHaveLength(20);
+    expect(encodeURIComponent(storage.getItem(HIGH_SCORES_STORAGE_KEY) ?? '').length).toBeLessThan(4000);
+  });
+
+  it('stores names as cookie-safe tokens so they cannot break the separators', () => {
+    const store = makeStore();
+    store.saveScore({ time: 5, optimalTime: 5, difficulty: 'EASY', visualEffect: 'NONE', playerName: 'A~B*C D' });
+    expect(makeStore().getTopScores()[0].playerName).toBe('A_B_C_D');
+  });
+
+  it('survives one corrupted entry without dropping the others', () => {
+    storage.setItem(
+      HIGH_SCORES_STORAGE_KEY,
+      'v2~good*10*5*EASY*NONE*1764000000***~bad*10*5*EASY*NONE*99999999999999999***~junk',
+    );
+    expect(makeStore().getTopScores().map((e) => e.id)).toEqual(['good', 'bad']);
+  });
+
+  it('refresh leaves an empty store empty', () => {
+    makeStore().refresh();
+    expect(storage.getItem(HIGH_SCORES_STORAGE_KEY)).toBeNull();
   });
 
   it('clears all stored scores', () => {
