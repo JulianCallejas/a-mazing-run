@@ -191,6 +191,9 @@
       background 160ms ease,
       color 160ms ease;
     user-select: none;
+    -webkit-user-select: none;
+    /* A long press must neither select the label nor open the callout/context menu (which also vibrates). */
+    -webkit-touch-callout: none;
   }
   .btn:hover:not(:disabled) {
     filter: brightness(1.15);

@@ -28,6 +28,32 @@ export const resolveMove = (move: MoveInput, yawIndex: number): Direction => {
   return move;
 };
 
+export type Swipe = 'up' | 'down' | 'left' | 'right';
+
+/** Minimum drag distance (px) before a touch counts as a swipe rather than a tap. */
+export const SWIPE_THRESHOLD = 28;
+
+/** Dominant-axis swipe direction of a drag, or null while it is still inside the dead zone. */
+export const classifySwipe = (dx: number, dy: number, threshold = SWIPE_THRESHOLD): Swipe | null => {
+  if (Math.hypot(dx, dy) < threshold) return null;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? 'right' : 'left';
+  return dy > 0 ? 'down' : 'up';
+};
+
+/**
+ * Touch mapping. Third-person: up/down walk forward/back, left/right turn the
+ * camera 90°. Aerial: the swipe direction is the absolute (north-up) direction.
+ */
+export const swipeToAction = (swipe: Swipe, mode: CameraMode): InputAction => {
+  if (mode === 'third-person') {
+    if (swipe === 'up') return { type: 'move', move: 'forward' };
+    if (swipe === 'down') return { type: 'move', move: 'back' };
+    return { type: 'turn', quarterTurns: swipe === 'left' ? -1 : 1 };
+  }
+  const move: Direction = swipe === 'up' ? 'north' : swipe === 'down' ? 'south' : swipe === 'left' ? 'west' : 'east';
+  return { type: 'move', move };
+};
+
 const UP = ['KeyW', 'ArrowUp'];
 const DOWN = ['KeyS', 'ArrowDown'];
 const LEFT = ['KeyA', 'ArrowLeft'];

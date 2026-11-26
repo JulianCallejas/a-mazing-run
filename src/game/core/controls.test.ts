@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { keyToAction, resolveMove, rotateDirection, yawIndexToDirection } from './controls';
+import {
+  classifySwipe,
+  keyToAction,
+  resolveMove,
+  rotateDirection,
+  swipeToAction,
+  yawIndexToDirection,
+} from './controls';
 
 describe('rotateDirection', () => {
   it('rotates clockwise for positive quarter turns and wraps around', () => {
@@ -44,6 +51,36 @@ describe('keyToAction', () => {
     expect(keyToAction('Escape', 'third-person')).toEqual({ type: 'pause' });
     expect(keyToAction('KeyP', 'third-person')).toEqual({ type: 'pause' });
     expect(keyToAction('KeyX', 'third-person')).toBeNull();
+  });
+});
+
+describe('classifySwipe', () => {
+  it('ignores drags inside the dead zone', () => {
+    expect(classifySwipe(0, 0)).toBeNull();
+    expect(classifySwipe(10, -12)).toBeNull();
+  });
+
+  it('picks the dominant axis (screen y grows downward)', () => {
+    expect(classifySwipe(0, -60)).toBe('up');
+    expect(classifySwipe(5, 60)).toBe('down');
+    expect(classifySwipe(-60, 20)).toBe('left');
+    expect(classifySwipe(60, -20)).toBe('right');
+  });
+});
+
+describe('swipeToAction', () => {
+  it('third-person: up/down walk, left/right turn', () => {
+    expect(swipeToAction('up', 'third-person')).toEqual({ type: 'move', move: 'forward' });
+    expect(swipeToAction('down', 'third-person')).toEqual({ type: 'move', move: 'back' });
+    expect(swipeToAction('left', 'third-person')).toEqual({ type: 'turn', quarterTurns: -1 });
+    expect(swipeToAction('right', 'third-person')).toEqual({ type: 'turn', quarterTurns: 1 });
+  });
+
+  it('aerial: the swipe is an absolute map direction', () => {
+    expect(swipeToAction('up', 'aerial')).toEqual({ type: 'move', move: 'north' });
+    expect(swipeToAction('down', 'aerial')).toEqual({ type: 'move', move: 'south' });
+    expect(swipeToAction('left', 'aerial')).toEqual({ type: 'move', move: 'west' });
+    expect(swipeToAction('right', 'aerial')).toEqual({ type: 'move', move: 'east' });
   });
 });
 
