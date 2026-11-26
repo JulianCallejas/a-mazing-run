@@ -122,10 +122,16 @@ export const ResultOverlay = ({ outcome, entry, rank, survived, difficulty, effe
                 {rank === 1 ? 'A new legend — first in the Hall of Fame!' : `Rank #${rank} in the Hall of Fame`}
               </p>
             )}
-            <dl className="mt-5 grid grid-cols-3 gap-2 text-sm">
+            <dl className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
               <div className="bg-iron-800/70 py-2">
                 <dt className="font-label text-parchment-500">Time</dt>
                 <dd className="numeric text-parchment-100">{formatTime(entry.time)}</dd>
+              </div>
+              <div className="bg-iron-800/70 py-2">
+                <dt className="font-label text-parchment-500">Efficiency</dt>
+                <dd className="numeric text-parchment-100">
+                  {Math.round(Math.min(1, entry.optimalTime / entry.time) * 100)}%
+                </dd>
               </div>
               <div className="bg-iron-800/70 py-2">
                 <dt className="font-label text-parchment-500">Trial</dt>

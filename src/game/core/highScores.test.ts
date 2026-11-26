@@ -34,12 +34,13 @@ describe('high score store', () => {
     createHighScoreStore({ storage, now: () => NOW, createId: () => `id-${++ids}` });
 
   it('saves a winning run with its score and persists it under the legacy key', () => {
-    const entry = makeStore().saveScore({ time: 50, difficulty: 'EASY', visualEffect: 'FOG' });
+    const entry = makeStore().saveScore({ time: 50, optimalTime: 25, difficulty: 'EASY', visualEffect: 'FOG' });
 
     expect(entry).toEqual({
       id: 'id-1',
-      score: 25,
+      score: 625,
       time: 50,
+      optimalTime: 25,
       difficulty: 'EASY',
       visualEffect: 'FOG',
       date: NOW.toISOString(),
@@ -50,7 +51,7 @@ describe('high score store', () => {
   it('keeps only the top 10 scores sorted descending', () => {
     const store = makeStore();
     for (let time = 1; time <= 12; time++) {
-      store.saveScore({ time, difficulty: 'MEDIUM', visualEffect: 'NONE' });
+      store.saveScore({ time, optimalTime: 0.5, difficulty: 'MEDIUM', visualEffect: 'NONE' });
     }
 
     const scores = store.getTopScores();
@@ -58,7 +59,7 @@ describe('high score store', () => {
     expect(scores.map((s) => s.time)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
-  it('reads entries written by the previous ScoreManager format', () => {
+  it('discards entries saved before the efficiency formula (no optimalTime)', () => {
     const legacy = [
       {
         id: '1700000000000-0.5',
@@ -72,8 +73,17 @@ describe('high score store', () => {
     ];
     storage.setItem(HIGH_SCORES_STORAGE_KEY, JSON.stringify(legacy));
 
-    // Stored scores are recomputed from time + settings with the current formula.
-    expect(makeStore().getTopScores()).toEqual([{ ...legacy[0], score: 560 }]);
+    expect(makeStore().getTopScores()).toEqual([]);
+  });
+
+  it('recomputes stored scores from time, optimal time and settings on read', () => {
+    storage.setItem(
+      HIGH_SCORES_STORAGE_KEY,
+      JSON.stringify([
+        { id: 'a', score: 1, time: 10, optimalTime: 5, difficulty: 'HARD', visualEffect: 'NONE', date: 'd' },
+      ]),
+    );
+    expect(makeStore().getTopScores()[0].score).toBe(1400);
   });
 
   it('ignores corrupted JSON and malformed entries instead of crashing', () => {
@@ -83,7 +93,7 @@ describe('high score store', () => {
     storage.setItem(
       HIGH_SCORES_STORAGE_KEY,
       JSON.stringify([
-        { id: 'ok', score: 10, time: 100, difficulty: 'EASY', visualEffect: 'NONE', date: 'd' },
+        { id: 'ok', score: 10, time: 100, optimalTime: 50, difficulty: 'EASY', visualEffect: 'NONE', date: 'd' },
         { id: 'bad-difficulty', score: 10, time: 1, difficulty: 'GOD', visualEffect: 'NONE', date: 'd' },
         { id: 'bad-score', score: 'lots', time: 1, difficulty: 'EASY', visualEffect: 'NONE', date: 'd' },
         null,
@@ -97,10 +107,10 @@ describe('high score store', () => {
     expect(store.isHighScore(1)).toBe(true);
 
     for (let time = 1; time <= 10; time++) {
-      store.saveScore({ time, difficulty: 'MEDIUM', visualEffect: 'NONE' });
+      store.saveScore({ time, optimalTime: 0.5, difficulty: 'MEDIUM', visualEffect: 'NONE' });
     }
-    expect(store.isHighScore(100)).toBe(false);
-    expect(store.isHighScore(151)).toBe(true);
+    expect(store.isHighScore(75)).toBe(false);
+    expect(store.isHighScore(76)).toBe(true);
   });
 
   it('keeps working when storage throws (private mode / quota)', () => {
@@ -116,12 +126,12 @@ describe('high score store', () => {
     const store = createHighScoreStore({ storage: failing, now: () => NOW, createId: () => 'x' });
 
     expect(store.getTopScores()).toEqual([]);
-    expect(store.saveScore({ time: 10, difficulty: 'MEDIUM', visualEffect: 'NONE' }).score).toBe(150);
+    expect(store.saveScore({ time: 10, optimalTime: 5, difficulty: 'MEDIUM', visualEffect: 'NONE' }).score).toBe(750);
   });
 
   it('clears all stored scores', () => {
     const store = makeStore();
-    store.saveScore({ time: 10, difficulty: 'MEDIUM', visualEffect: 'NONE' });
+    store.saveScore({ time: 10, optimalTime: 5, difficulty: 'MEDIUM', visualEffect: 'NONE' });
     store.clear();
 
     expect(store.getTopScores()).toEqual([]);
