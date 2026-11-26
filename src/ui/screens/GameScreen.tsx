@@ -271,7 +271,11 @@ const GameScreen: React.FC = () => {
         onExit={handleExit}
       />
 
-      <TouchControls intents={intents} mode={cameraMode} />
+      <TouchControls
+        intents={intents}
+        mode={cameraMode}
+        active={status === 'ready' || status === 'playing'}
+      />
 
       {status === 'paused' && (
         <PauseOverlay

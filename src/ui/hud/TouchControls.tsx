@@ -1,12 +1,19 @@
-import { useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, RotateCcw, RotateCw } from 'lucide-react';
-import type { CameraMode, MoveInput } from '../../game/core/controls';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
+import { classifySwipe, swipeToAction, type CameraMode, type Swipe } from '../../game/core/controls';
 import type { GameIntents } from '../../game/scene/useGameInput';
 
 interface TouchControlsProps {
   intents: RefObject<GameIntents | null>;
   mode: CameraMode;
+  /** Gestures are only captured while a run is ready/playing, so overlays stay tappable. */
+  active: boolean;
 }
+
+/** A touch shorter than this that never became a swipe is a tap (stop). */
+const TAP_MAX_MS = 300;
+const MOVE_SOURCE = 'touch-swipe';
+const ARROWS = { up: ArrowUp, down: ArrowDown, left: ArrowLeft, right: ArrowRight } as const;
 
 const isCoarsePointer = () => {
   try {
@@ -16,100 +23,122 @@ const isCoarsePointer = () => {
   }
 };
 
-/** A hold-to-move pad button: pointer capture plus every release path. */
-const HoldButton = ({
-  intents,
-  source,
-  move,
-  label,
-  className,
-  children,
-}: {
-  intents: RefObject<GameIntents | null>;
-  source: string;
-  move: MoveInput;
-  label: string;
-  className: string;
-  children: React.ReactNode;
-}) => {
-  const start = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    intents.current?.moveStart(source, move);
-  };
-  const end = () => intents.current?.moveEnd(source);
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      className={`btn btn-icon !w-14 !h-14 touch-none ${className}`}
-      onPointerDown={start}
-      onPointerUp={end}
-      onPointerCancel={end}
-      onLostPointerCapture={end}
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      {children}
-    </button>
-  );
+const buzz = () => {
+  try {
+    navigator.vibrate?.(8);
+  } catch {
+    /* haptics are optional */
+  }
 };
 
-/**
- * On-screen pad for touch devices. Chase view: hold forward/back, tap to turn.
- * Map view: hold a compass direction. Emits the same intents as the keyboard.
- */
-const TouchControls = ({ intents, mode }: TouchControlsProps) => {
-  const [enabled] = useState(isCoarsePointer);
-  if (!enabled) return null;
+interface Gesture {
+  pointerId: number;
+  originX: number;
+  originY: number;
+  startedAt: number;
+  acted: boolean;
+  turned: boolean;
+}
 
-  const icon = 'w-6 h-6';
+/**
+ * Full-screen swipe layer for touch devices. Swipe sets the direction (it keeps
+ * going after you lift the finger); tap stops. Chase view: up/down walk
+ * forward/back, left/right turn once per gesture. Map view: the swipe is the
+ * absolute direction. Emits the same intents as the keyboard.
+ */
+const TouchControls = ({ intents, mode, active }: TouchControlsProps) => {
+  const [enabled] = useState(isCoarsePointer);
+  const gesture = useRef<Gesture | null>(null);
+  const [flash, setFlash] = useState<{ id: number; swipe: Swipe; x: number; y: number } | null>(null);
+  const [showHint, setShowHint] = useState(true);
+  const flashId = useRef(0);
+
+  useEffect(() => {
+    if (!flash) return;
+    const timer = window.setTimeout(() => setFlash(null), 420);
+    return () => window.clearTimeout(timer);
+  }, [flash]);
+
+  if (!enabled || !active) return null;
+
+  const apply = (swipe: Swipe, x: number, y: number) => {
+    const g = gesture.current;
+    if (!g) return;
+    const action = swipeToAction(swipe, mode);
+    if (action.type === 'move') {
+      intents.current?.moveStart(MOVE_SOURCE, action.move);
+    } else if (action.type === 'turn') {
+      if (g.turned) return;
+      g.turned = true;
+      intents.current?.turn(action.quarterTurns);
+    }
+    g.acted = true;
+    // Re-anchor so the next direction change is measured from here, without lifting the finger.
+    g.originX = x;
+    g.originY = y;
+    setShowHint(false);
+    setFlash({ id: ++flashId.current, swipe, x, y });
+    buzz();
+  };
+
+  const onDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (gesture.current) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    gesture.current = {
+      pointerId: event.pointerId,
+      originX: event.clientX,
+      originY: event.clientY,
+      startedAt: performance.now(),
+      acted: false,
+      turned: false,
+    };
+  };
+
+  const onMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const g = gesture.current;
+    if (!g || g.pointerId !== event.pointerId) return;
+    const swipe = classifySwipe(event.clientX - g.originX, event.clientY - g.originY);
+    if (swipe) apply(swipe, event.clientX, event.clientY);
+  };
+
+  const onUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const g = gesture.current;
+    if (!g || g.pointerId !== event.pointerId) return;
+    gesture.current = null;
+    if (!g.acted && performance.now() - g.startedAt <= TAP_MAX_MS) {
+      intents.current?.moveEnd(MOVE_SOURCE);
+    }
+  };
+
+  const onCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (gesture.current?.pointerId === event.pointerId) gesture.current = null;
+  };
+
+  const Arrow = flash ? ARROWS[flash.swipe] : null;
+
   return (
     <div
-      className="pointer-events-auto absolute z-10 grid grid-cols-3 grid-rows-3 gap-1.5 touch-none select-none"
-      style={{
-        left: 'max(1rem, env(safe-area-inset-left))',
-        bottom: 'max(1rem, env(safe-area-inset-bottom))',
-      }}
+      className="absolute inset-0 z-[7] touch-none select-none [-webkit-touch-callout:none]"
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={onCancel}
+      onContextMenu={(e) => e.preventDefault()}
     >
-      {mode === 'third-person' ? (
-        <>
-          <HoldButton intents={intents} source="touch-up" move="forward" label="Walk forward" className="col-start-2 row-start-1">
-            <ChevronUp className={icon} />
-          </HoldButton>
-          <button
-            type="button"
-            aria-label="Turn left"
-            className="btn btn-icon !w-14 !h-14 touch-none col-start-1 row-start-2"
-            onPointerDown={() => intents.current?.turn(-1)}
-          >
-            <RotateCcw className={icon} />
-          </button>
-          <button
-            type="button"
-            aria-label="Turn right"
-            className="btn btn-icon !w-14 !h-14 touch-none col-start-3 row-start-2"
-            onPointerDown={() => intents.current?.turn(1)}
-          >
-            <RotateCw className={icon} />
-          </button>
-          <HoldButton intents={intents} source="touch-down" move="back" label="Walk back" className="col-start-2 row-start-3">
-            <ChevronDown className={icon} />
-          </HoldButton>
-        </>
-      ) : (
-        <>
-          <HoldButton intents={intents} source="touch-up" move="north" label="Move north" className="col-start-2 row-start-1">
-            <ChevronUp className={icon} />
-          </HoldButton>
-          <HoldButton intents={intents} source="touch-left" move="west" label="Move west" className="col-start-1 row-start-2">
-            <ChevronLeft className={icon} />
-          </HoldButton>
-          <HoldButton intents={intents} source="touch-right" move="east" label="Move east" className="col-start-3 row-start-2">
-            <ChevronRight className={icon} />
-          </HoldButton>
-          <HoldButton intents={intents} source="touch-down" move="south" label="Move south" className="col-start-2 row-start-3">
-            <ChevronDown className={icon} />
-          </HoldButton>
-        </>
+      {Arrow && flash && (
+        <Arrow
+          key={flash.id}
+          aria-hidden="true"
+          className="pointer-events-none absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 text-gold-400/60 animate-ping"
+          style={{ left: flash.x, top: flash.y, animationIterationCount: 1, animationDuration: '420ms' }}
+        />
+      )}
+      {showHint && (
+        <p className="pointer-events-none absolute inset-x-0 bottom-[max(1.5rem,env(safe-area-inset-bottom))] text-center text-sm text-parchment-100/70">
+          {mode === 'third-person'
+            ? 'Swipe up/down to walk, sideways to turn, tap to stop'
+            : 'Swipe to move in that direction, tap to stop'}
+        </p>
       )}
     </div>
   );

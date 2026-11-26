@@ -121,11 +121,11 @@ export const PlayerAvatar = ({ actor, outcome = null }: PlayerAvatarProps) => {
       <ContactShadow radius={0.32} />
       {/* Hero locator: drawn on top of walls so the hero is never lost behind masonry. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} renderOrder={10}>
-        <ringGeometry args={[0.34, 0.4, 40]} />
+        <ringGeometry args={[0.2, 0.235, 40]} />
         <meshBasicMaterial
           color="#f0d993"
           transparent
-          opacity={0.45}
+          opacity={0.13}
           depthTest={false}
           depthWrite={false}
           blending={AdditiveBlending}
