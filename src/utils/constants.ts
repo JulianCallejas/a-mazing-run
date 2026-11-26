@@ -28,6 +28,7 @@ export const GAME_CONFIG = {
       name: 'Easy',
       mazeSize: 15,
       enemyCount: 1,
+      treasureCount: 3,
       speedMultiplier: 0.78,
       gracePeriod: 2000
     },
@@ -35,6 +36,7 @@ export const GAME_CONFIG = {
       name: 'Medium',
       mazeSize: 21,
       enemyCount: 1,
+      treasureCount: 5,
       speedMultiplier: 0.85,
       gracePeriod: 1500
     },
@@ -42,6 +44,7 @@ export const GAME_CONFIG = {
       name: 'Hard',
       mazeSize: 27,
       enemyCount: 2,
+      treasureCount: 7,
       speedMultiplier: 0.97,
       gracePeriod: 1000
     },
@@ -49,6 +52,7 @@ export const GAME_CONFIG = {
       name: 'Very Hard',
       mazeSize: 33,
       enemyCount: 2,
+      treasureCount: 9,
       speedMultiplier: 1.03,
       gracePeriod: 500
     }

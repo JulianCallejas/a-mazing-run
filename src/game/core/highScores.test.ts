@@ -129,6 +129,32 @@ describe('high score store', () => {
     expect(store.saveScore({ time: 10, optimalTime: 5, difficulty: 'MEDIUM', visualEffect: 'NONE' }).score).toBe(750);
   });
 
+  it('adds treasure points to the score and keeps the treasure counts', () => {
+    const entry = makeStore().saveScore({
+      time: 10,
+      optimalTime: 5,
+      difficulty: 'MEDIUM',
+      visualEffect: 'NONE',
+      treasureBase: 150,
+      treasuresFound: 2,
+      treasuresTotal: 5,
+    });
+    expect(entry.score).toBe(750 + 225);
+    expect(entry).toMatchObject({ treasureBase: 150, treasuresFound: 2, treasuresTotal: 5 });
+  });
+
+  it('keeps legacy entries without treasure fields, recomputed with 0 treasure points', () => {
+    storage.setItem(
+      HIGH_SCORES_STORAGE_KEY,
+      JSON.stringify([
+        { id: 'old', score: 1, time: 10, optimalTime: 5, difficulty: 'MEDIUM', visualEffect: 'NONE', date: 'd' },
+      ]),
+    );
+    const [entry] = makeStore().getTopScores();
+    expect(entry.score).toBe(750);
+    expect(entry.treasureBase).toBeUndefined();
+  });
+
   it('clears all stored scores', () => {
     const store = makeStore();
     store.saveScore({ time: 10, optimalTime: 5, difficulty: 'MEDIUM', visualEffect: 'NONE' });

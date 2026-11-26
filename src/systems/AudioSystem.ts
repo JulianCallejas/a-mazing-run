@@ -179,6 +179,17 @@ export class AudioSystem {
         });
         this.noiseBurst(t, 'lowpass', 140, 0.8, 0.4 * volume, 0.2, 2.2);
         break;
+      case 'treasure':
+        [7, 12, 16, 19].forEach((semi, i) => {
+          this.tone(t + i * 0.07, 'triangle', noteFrequency(semi), 0.005, 0.7, 0.16 * volume, true);
+          this.tone(t + i * 0.07, 'sine', noteFrequency(semi + 12), 0.005, 0.5, 0.05 * volume, true);
+        });
+        break;
+      case 'treasure-near':
+        // A faint, high glint; the caller scales `volume` with proximity.
+        this.tone(t, 'sine', noteFrequency(24), 0.004, 0.35, 0.07 * volume, true);
+        this.tone(t + 0.09, 'sine', noteFrequency(31), 0.004, 0.3, 0.04 * volume, true);
+        break;
       case 'thunder':
         this.noiseBurst(t, 'highpass', 1800, 0.6, 0.2 * volume, 0.002, 0.12);
         this.noiseBurst(t + 0.08, 'lowpass', 160, 0.9, 0.9 * volume, 0.08, 2.8, true);

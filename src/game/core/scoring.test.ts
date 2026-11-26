@@ -38,6 +38,17 @@ describe('calculateScore', () => {
     expect(calculateScore(3, 1, 'EASY', 'NONE')).toBe(333);
   });
 
+  it('adds treasure points scaled by difficulty and weather, on top of the escape score', () => {
+    expect(calculateScore(30, 30, 'EASY', 'NONE', 100)).toBe(1100);
+    expect(calculateScore(30, 30, 'HARD', 'FOG', 250)).toBe(Math.round(2800 * 1.25) + Math.round(250 * 2.8 * 1.25));
+    expect(calculateScore(50, 25, 'EASY', 'NONE', 0)).toBe(calculateScore(50, 25, 'EASY', 'NONE'));
+  });
+
+  it('rejects negative or non-finite treasure points', () => {
+    expect(() => calculateScore(10, 5, 'EASY', 'NONE', -1)).toThrow(RangeError);
+    expect(() => calculateScore(10, 5, 'EASY', 'NONE', Number.NaN)).toThrow(RangeError);
+  });
+
   it('rejects non-positive or non-finite times', () => {
     expect(() => calculateScore(0, 10, 'MEDIUM', 'NONE')).toThrow(RangeError);
     expect(() => calculateScore(-5, 10, 'MEDIUM', 'NONE')).toThrow(RangeError);
