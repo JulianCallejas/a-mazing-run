@@ -124,7 +124,7 @@ const InstructionsScreen: React.FC = () => (
           );
         })}
       </ul>
-      <p className="mt-3">The twenty best escapes are kept in the Hall of Fame on this device, saved in a long-lived cookie that is renewed every time you play.</p>
+      <p className="mt-3">The twenty best escapes are kept in the Hall of Fame on this device.</p>
     </Section>
 
     <Section title="Install the app" icon={<Download className="w-5 h-5" aria-hidden="true" />}>
