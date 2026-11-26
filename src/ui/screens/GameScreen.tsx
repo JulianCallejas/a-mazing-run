@@ -4,7 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import useGameStore from '../../store/useGameStore';
 import { GAME_CONFIG } from '../../utils/constants';
 import { audioSystem } from '../../systems/AudioSystem';
-import { createGameEngine, DIRECTION_VECTORS, type GameEvent, type GameStatus } from '../../game/core/engine';
+import {
+  createGameEngine,
+  DIRECTION_VECTORS,
+  optimalRunTime,
+  type GameEvent,
+  type GameStatus,
+} from '../../game/core/engine';
 import { generateMaze, isWalkable, type Maze } from '../../game/core/maze';
 import type { Difficulty } from '../../game/core/scoring';
 import { highScores, type ScoreEntry } from '../../game/core/highScores';
@@ -173,7 +179,12 @@ const GameScreen: React.FC = () => {
             audioSystem.playSoundEffect('awaken', 0.7);
             break;
           case 'won': {
-            const entry = highScores.saveScore({ time: event.time, difficulty, visualEffect });
+            const entry = highScores.saveScore({
+              time: event.time,
+              optimalTime: optimalRunTime(run.engine.maze),
+              difficulty,
+              visualEffect,
+            });
             const index = highScores.getTopScores().findIndex((e) => e.id === entry.id);
             setResult({ entry, rank: index >= 0 ? index + 1 : null, survived: event.time });
             setStatus('won');
@@ -188,7 +199,7 @@ const GameScreen: React.FC = () => {
         }
       }
     },
-    [difficulty, visualEffect, announce],
+    [difficulty, visualEffect, announce, run.engine],
   );
 
   const handleFrame = useCallback(() => {

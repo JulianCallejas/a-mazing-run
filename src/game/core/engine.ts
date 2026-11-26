@@ -20,6 +20,10 @@ export const OPPOSITE_DIRECTION: Readonly<Record<Direction, Direction>> = {
   west: 'east',
 };
 
+/** Fastest possible escape: shortest path length × the player's step duration. */
+export const optimalRunTime = (maze: Maze): number =>
+  distancesFrom(maze.grid, maze.start)[maze.exit.z][maze.exit.x] * PLAYER_STEP_DURATION;
+
 export type GameStatus = 'ready' | 'playing' | 'paused' | 'won' | 'lost';
 
 export type GameEvent =

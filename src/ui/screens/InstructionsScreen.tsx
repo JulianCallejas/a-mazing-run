@@ -93,7 +93,7 @@ const InstructionsScreen: React.FC = () => (
 
     <Section title="Glory" icon={<Trophy className="w-5 h-5" aria-hidden="true" />}>
       <p className="numeric">
-        Score = 1000 × trial multiplier × weather multiplier ÷ seconds. Harder trials multiply your score (Easy
+        Score = 1000 × trial multiplier × weather multiplier × efficiency, where efficiency is your time compared with the fastest possible escape of that maze (100% = perfect run). Harder trials multiply your score (Easy
         ×1, Medium ×1.5, Hard ×2.8, Very Hard ×3.6) and braving the weather multiplies it again:
       </p>
       <ul className="mt-3 flex flex-wrap gap-2">

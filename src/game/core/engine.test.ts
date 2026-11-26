@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGameEngine, CATCH_RADIUS, type GameEvent } from './engine';
+import { createGameEngine, optimalRunTime, CATCH_RADIUS, type GameEvent } from './engine';
 import { distancesFrom, generateMaze } from './maze';
 import { mazeFromRows } from './testMaze';
 
@@ -23,6 +23,18 @@ const types = (events: GameEvent[]) => events.map((e) => e.type);
 
 const soloEngine = (maze = corridor) =>
   createGameEngine({ maze, difficulty: 'MEDIUM', enemySpawns: [] });
+
+describe('optimalRunTime', () => {
+  it('is the shortest path length times the player step duration', () => {
+    expect(optimalRunTime(corridor)).toBeCloseTo(6 * STEP, 9);
+  });
+
+  it('matches the BFS distance from start to exit on a generated maze', () => {
+    const maze = generateMaze({ width: 15, height: 15, seed: 7 });
+    const steps = distancesFrom(maze.grid, maze.start)[maze.exit.z][maze.exit.x];
+    expect(optimalRunTime(maze)).toBeCloseTo(steps * STEP, 9);
+  });
+});
 
 describe('game state machine', () => {
   it('starts in ready, ignores input and time until start()', () => {

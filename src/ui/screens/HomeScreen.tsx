@@ -112,7 +112,7 @@ const HomeScreen: React.FC = () => {
             Begin the Escape
           </button>
           <p className="mt-3 text-center text-xs text-parchment-500 numeric">
-            Score ×{selected.multiplier} on {selected.label} · faster escapes score higher
+            Score ×{selected.multiplier} on {selected.label} · the closer to a perfect run, the higher the score
           </p>
 
           <nav className="mt-4 grid grid-cols-2 gap-2.5" aria-label="More">

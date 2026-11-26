@@ -1,7 +1,7 @@
 import { GAME_CONFIG } from '../../utils/constants';
 import { calculateScore, type Difficulty, type VisualEffect } from './scoring';
 
-/** Same key and shape as the previous ScoreManager, so saved scores survive. */
+/** Entries saved before the efficiency formula lack `optimalTime` and are discarded on read. */
 export const HIGH_SCORES_STORAGE_KEY = 'amazing-run-scores';
 export const MAX_HIGH_SCORES = 10;
 
@@ -9,6 +9,8 @@ export interface ScoreEntry {
   id: string;
   score: number;
   time: number;
+  /** Fastest possible escape of that maze, in seconds. */
+  optimalTime: number;
   difficulty: Difficulty;
   visualEffect: VisualEffect;
   date: string;
@@ -17,6 +19,7 @@ export interface ScoreEntry {
 
 export interface FinishedRun {
   time: number;
+  optimalTime: number;
   difficulty: Difficulty;
   visualEffect: VisualEffect;
   playerName?: string;
@@ -51,6 +54,9 @@ const toScoreEntry = (value: unknown): ScoreEntry | null => {
     !Number.isFinite(v.score) ||
     typeof v.time !== 'number' ||
     !Number.isFinite(v.time) ||
+    typeof v.optimalTime !== 'number' ||
+    !Number.isFinite(v.optimalTime) ||
+    v.optimalTime <= 0 ||
     !isDifficulty(v.difficulty) ||
     !isVisualEffect(v.visualEffect) ||
     typeof v.date !== 'string'
@@ -61,6 +67,7 @@ const toScoreEntry = (value: unknown): ScoreEntry | null => {
     id: v.id,
     score: v.score,
     time: v.time,
+    optimalTime: v.optimalTime,
     difficulty: v.difficulty,
     visualEffect: v.visualEffect,
     date: v.date,
@@ -72,7 +79,7 @@ const toScoreEntry = (value: unknown): ScoreEntry | null => {
 /** Scores are derived from time + settings, so recompute to follow the current formula. */
 const rescore = (entry: ScoreEntry): ScoreEntry =>
   entry.time > 0
-    ? { ...entry, score: calculateScore(entry.time, entry.difficulty, entry.visualEffect) }
+    ? { ...entry, score: calculateScore(entry.time, entry.optimalTime, entry.difficulty, entry.visualEffect) }
     : entry;
 
 const byScoreDesc = (a: ScoreEntry, b: ScoreEntry) => b.score - a.score;
@@ -114,8 +121,9 @@ export const createHighScoreStore = ({
     saveScore(run: FinishedRun): ScoreEntry {
       const entry: ScoreEntry = {
         id: createId(),
-        score: calculateScore(run.time, run.difficulty, run.visualEffect),
+        score: calculateScore(run.time, run.optimalTime, run.difficulty, run.visualEffect),
         time: run.time,
+        optimalTime: run.optimalTime,
         difficulty: run.difficulty,
         visualEffect: run.visualEffect,
         date: now().toISOString(),
