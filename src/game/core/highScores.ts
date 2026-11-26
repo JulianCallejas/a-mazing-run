@@ -15,6 +15,10 @@ export interface ScoreEntry {
   visualEffect: VisualEffect;
   date: string;
   playerName?: string;
+  /** Treasure base points collected (before multipliers); absent on entries saved before treasures. */
+  treasureBase?: number;
+  treasuresFound?: number;
+  treasuresTotal?: number;
 }
 
 export interface FinishedRun {
@@ -23,6 +27,9 @@ export interface FinishedRun {
   difficulty: Difficulty;
   visualEffect: VisualEffect;
   playerName?: string;
+  treasureBase?: number;
+  treasuresFound?: number;
+  treasuresTotal?: number;
 }
 
 /** Minimal subset of the Web Storage API, injectable for tests. */
@@ -73,13 +80,29 @@ const toScoreEntry = (value: unknown): ScoreEntry | null => {
     date: v.date,
   };
   if (typeof v.playerName === 'string') entry.playerName = v.playerName;
+  const count = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : undefined);
+  const treasureBase = count(v.treasureBase);
+  const treasuresFound = count(v.treasuresFound);
+  const treasuresTotal = count(v.treasuresTotal);
+  if (treasureBase !== undefined) entry.treasureBase = treasureBase;
+  if (treasuresFound !== undefined) entry.treasuresFound = treasuresFound;
+  if (treasuresTotal !== undefined) entry.treasuresTotal = treasuresTotal;
   return entry;
 };
 
 /** Scores are derived from time + settings, so recompute to follow the current formula. */
 const rescore = (entry: ScoreEntry): ScoreEntry =>
   entry.time > 0
-    ? { ...entry, score: calculateScore(entry.time, entry.optimalTime, entry.difficulty, entry.visualEffect) }
+    ? {
+        ...entry,
+        score: calculateScore(
+          entry.time,
+          entry.optimalTime,
+          entry.difficulty,
+          entry.visualEffect,
+          entry.treasureBase ?? 0,
+        ),
+      }
     : entry;
 
 const byScoreDesc = (a: ScoreEntry, b: ScoreEntry) => b.score - a.score;
@@ -121,7 +144,7 @@ export const createHighScoreStore = ({
     saveScore(run: FinishedRun): ScoreEntry {
       const entry: ScoreEntry = {
         id: createId(),
-        score: calculateScore(run.time, run.optimalTime, run.difficulty, run.visualEffect),
+        score: calculateScore(run.time, run.optimalTime, run.difficulty, run.visualEffect, run.treasureBase ?? 0),
         time: run.time,
         optimalTime: run.optimalTime,
         difficulty: run.difficulty,
@@ -129,6 +152,9 @@ export const createHighScoreStore = ({
         date: now().toISOString(),
       };
       if (run.playerName) entry.playerName = run.playerName;
+      if (run.treasureBase !== undefined) entry.treasureBase = run.treasureBase;
+      if (run.treasuresFound !== undefined) entry.treasuresFound = run.treasuresFound;
+      if (run.treasuresTotal !== undefined) entry.treasuresTotal = run.treasuresTotal;
 
       write([...read(), entry].sort(byScoreDesc).slice(0, MAX_HIGH_SCORES));
       return entry;

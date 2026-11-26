@@ -12,11 +12,13 @@ import {
   type GameStatus,
 } from '../../game/core/engine';
 import { generateMaze, isWalkable, type Maze } from '../../game/core/maze';
-import type { Difficulty } from '../../game/core/scoring';
+import type { Difficulty, VisualEffect } from '../../game/core/scoring';
+import { placeTreasures, TREASURE_DEFS } from '../../game/core/treasures';
 import { highScores, type ScoreEntry } from '../../game/core/highScores';
 import GameLoop from '../../game/scene/GameLoop';
 import CameraRig, { type CameraRigState } from '../../game/scene/CameraRig';
 import MazeWorld from '../../game/scene/MazeWorld';
+import Treasures from '../../game/scene/Treasures';
 import { GuardianAvatar, PlayerAvatar } from '../../game/scene/Avatars';
 import { useGameInput } from '../../game/scene/useGameInput';
 import RenderDiagnosticsProbe from '../../game/scene/RenderDiagnostics';
@@ -37,6 +39,9 @@ const initialYawIndex = (maze: Maze): number => {
   return Math.max(0, index);
 };
 
+/** Distance (in cells) at which a hidden treasure starts to chime. */
+const TREASURE_CHIME_RANGE = 3;
+
 let runCounter = 0;
 
 interface RunOptions {
@@ -46,11 +51,17 @@ interface RunOptions {
   guardians?: boolean;
 }
 
-const createRun = (difficulty: Difficulty, options: RunOptions = {}) => {
-  const size = GAME_CONFIG.DIFFICULTY[difficulty].mazeSize;
+const createRun = (difficulty: Difficulty, effect: VisualEffect, options: RunOptions = {}) => {
+  const { mazeSize: size, treasureCount } = GAME_CONFIG.DIFFICULTY[difficulty];
   const maze = generateMaze({ width: size, height: size, seed: options.seed });
   const rig: CameraRigState = { yawIndex: initialYawIndex(maze), zoom: 3.5 };
-  const engine = createGameEngine({ maze, difficulty, enemySpawns: options.guardians === false ? [] : undefined });
+  const treasures = placeTreasures(maze, treasureCount, effect, maze.seed + 2);
+  const engine = createGameEngine({
+    maze,
+    difficulty,
+    treasures,
+    enemySpawns: options.guardians === false ? [] : undefined,
+  });
   return { id: ++runCounter, engine, rig };
 };
 
@@ -69,7 +80,7 @@ const GameScreen: React.FC = () => {
   const toggleCameraMode = useGameStore((s) => s.toggleCameraMode);
   const toggleSound = useGameStore((s) => s.toggleSound);
 
-  const [run, setRun] = useState(() => createRun(difficulty));
+  const [run, setRun] = useState(() => createRun(difficulty, visualEffect));
   const [status, setStatus] = useState<GameStatus>('ready');
   const [result, setResult] = useState<RunResult | null>(null);
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -77,6 +88,7 @@ const GameScreen: React.FC = () => {
   const hud = useRef<HudHandle>(null);
   const guardiansAwake = useRef(false);
   const frozen = useRef(false);
+  const lastTreasureChime = useRef(0);
   const pendingState = useRef<{ name: TestState; resolve: (value: { state: string }) => void } | null>(null);
   const qaSeed = useRef(42);
   const { engine, rig } = run;
@@ -115,7 +127,7 @@ const GameScreen: React.FC = () => {
           setResult(null);
           setBanner(null);
           setRun(
-            createRun(useGameStore.getState().difficulty, {
+            createRun(useGameStore.getState().difficulty, useGameStore.getState().visualEffect, {
               seed: qaSeed.current,
               guardians: !runsWithoutGuardians(name),
             }),
@@ -178,12 +190,25 @@ const GameScreen: React.FC = () => {
             announce('The guardians awaken', 'danger');
             audioSystem.playSoundEffect('awaken', 0.7);
             break;
+          case 'treasure': {
+            const bonus = Math.round(
+              event.points *
+                GAME_CONFIG.SCORING.MULTIPLIERS[difficulty] *
+                GAME_CONFIG.VISUAL_EFFECTS[visualEffect].multiplier,
+            );
+            announce(`${TREASURE_DEFS[event.kind].name} +${bonus}`, 'gold');
+            audioSystem.playSoundEffect('treasure', 0.7);
+            break;
+          }
           case 'won': {
             const entry = highScores.saveScore({
               time: event.time,
               optimalTime: optimalRunTime(run.engine.maze),
               difficulty,
               visualEffect,
+              treasureBase: run.engine.treasurePoints,
+              treasuresFound: run.engine.treasuresFound,
+              treasuresTotal: run.engine.treasures.length,
             });
             const index = highScores.getTopScores().findIndex((e) => e.id === entry.id);
             setResult({ entry, rank: index >= 0 ? index + 1 : null, survived: event.time });
@@ -205,6 +230,23 @@ const GameScreen: React.FC = () => {
   const handleFrame = useCallback(() => {
     const threat = hud.current?.update(engine, performance.now() / 1000, guardiansAwake.current) ?? 0;
     audioSystem.setDanger(threat);
+
+    // A faint chime when a hidden treasure is close, spaced out and louder the nearer it is.
+    if (engine.status === 'playing') {
+      let nearest = Infinity;
+      for (const treasure of engine.treasures) {
+        if (treasure.collected) continue;
+        nearest = Math.min(
+          nearest,
+          Math.hypot(treasure.cell.x - engine.player.position.x, treasure.cell.z - engine.player.position.z),
+        );
+      }
+      const now = performance.now();
+      if (nearest <= TREASURE_CHIME_RANGE && now - lastTreasureChime.current > 700 + nearest * 500) {
+        lastTreasureChime.current = now;
+        audioSystem.playSoundEffect('treasure-near', 1 - nearest / (TREASURE_CHIME_RANGE + 0.5));
+      }
+    }
   }, [engine]);
 
   // Silence the heartbeat when leaving the game screen.
@@ -223,7 +265,7 @@ const GameScreen: React.FC = () => {
     // Reset HUD values immediately; the first frame of the new run may take a moment.
     hud.current?.resetTimer();
     guardiansAwake.current = false;
-    setRun(createRun(difficulty));
+    setRun(createRun(difficulty, visualEffect));
     setStatus('ready');
     setResult(null);
     setBanner(null);
@@ -244,11 +286,13 @@ const GameScreen: React.FC = () => {
           cameraMode={cameraMode}
           celebrating={status === 'won'}
         />
+        <Treasures key={run.id} engine={engine} />
         {showDiagnostics && <RenderDiagnosticsProbe />}
         <PlayerAvatar
           key={run.id}
           actor={engine.player}
           outcome={status === 'won' || status === 'lost' ? status : null}
+          boost={() => engine.lanternBoost}
         />
         {engine.enemies.map((enemy) => (
           <GuardianAvatar key={enemy.id} actor={enemy} target={engine.player} />

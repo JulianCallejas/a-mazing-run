@@ -1,5 +1,5 @@
 import { useImperativeHandle, useRef, type Ref } from 'react';
-import { Eye, Hourglass, House, Map as MapIcon, Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Eye, Gem, Hourglass, House, Map as MapIcon, Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import type { GameEngine, GameStatus } from '../../game/core/engine';
 import type { CameraMode } from '../../game/core/controls';
 import { formatTime, type Difficulty, type VisualEffect } from '../../game/core/scoring';
@@ -78,6 +78,7 @@ const Hud = ({
 }: HudProps) => {
   const timeLabel = useRef<HTMLSpanElement>(null);
   const danger = useRef<HTMLDivElement>(null);
+  const treasureLabel = useRef<HTMLSpanElement>(null);
   const minimap = useRef<MinimapHandle>(null);
   const trial = difficultyInfo(difficulty);
   const weather = weatherInfo(effect);
@@ -101,15 +102,21 @@ const Hud = ({
         const pulse = 0.75 + 0.25 * Math.sin(time * (5 + threat * 6));
         if (danger.current) danger.current.style.opacity = (threat * pulse).toFixed(3);
 
+        const treasures = `${current.treasuresFound}/${current.treasures.length}`;
+        if (treasureLabel.current && treasureLabel.current.textContent !== treasures) {
+          treasureLabel.current.textContent = treasures;
+        }
+
         minimap.current?.update(current, time);
         return threat;
       },
       resetTimer: () => {
         if (timeLabel.current) timeLabel.current.textContent = formatTime(0);
         if (danger.current) danger.current.style.opacity = '0';
+        if (treasureLabel.current) treasureLabel.current.textContent = `0/${engine.treasures.length}`;
       },
     }),
-    [],
+    [engine],
   );
 
   const finished = status === 'won' || status === 'lost';
@@ -143,6 +150,14 @@ const Hud = ({
               </span>
               <WeatherIcon className="w-4 h-4 text-frost-300 ml-auto" aria-label={weather.label} />
             </div>
+            {engine.treasures.length > 0 && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-parchment-300" title="Hidden treasures found">
+                <Gem className="w-4 h-4 text-gold-400" aria-hidden="true" />
+                <span ref={treasureLabel} className="numeric text-parchment-100" aria-label="Treasures found">
+                  0/{engine.treasures.length}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="pointer-events-auto flex gap-2">

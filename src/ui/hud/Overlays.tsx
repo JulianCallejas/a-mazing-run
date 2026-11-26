@@ -142,6 +142,17 @@ export const ResultOverlay = ({ outcome, entry, rank, survived, difficulty, effe
                 <dd className="numeric text-parchment-100">×{weather.multiplier}</dd>
               </div>
             </dl>
+            {entry.treasuresTotal !== undefined && entry.treasuresTotal > 0 && (
+              <p className="mt-3 font-label text-sm text-parchment-300">
+                Treasures {entry.treasuresFound ?? 0}/{entry.treasuresTotal}
+                {(entry.treasureBase ?? 0) > 0 && (
+                  <span className="numeric text-gold-300">
+                    {' '}
+                    +{Math.round((entry.treasureBase ?? 0) * difficultyInfo(difficulty).multiplier * weather.multiplier)}
+                  </span>
+                )}
+              </p>
+            )}
           </>
         ) : (
           <p className="mt-6 text-parchment-300">

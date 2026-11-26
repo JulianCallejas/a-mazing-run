@@ -46,9 +46,13 @@ interface PlayerAvatarProps {
   actor: Readonly<Actor>;
   /** Final pose: lantern raised on escape, collapse when caught. */
   outcome?: 'won' | 'lost' | null;
+  /** 0..1 lantern boost (oil flask), read every frame. */
+  boost?: () => number;
 }
 
-export const PlayerAvatar = ({ actor, outcome = null }: PlayerAvatarProps) => {
+const LANTERN_BASE_DISTANCE = 4.5;
+
+export const PlayerAvatar = ({ actor, outcome = null, boost }: PlayerAvatarProps) => {
   const model = useMemo(() => buildHero(), []);
   const ending = useRef(0);
   const joints = useRef<HeroJoints | null>(null);
@@ -111,7 +115,9 @@ export const PlayerAvatar = ({ actor, outcome = null }: PlayerAvatarProps) => {
     j.cloak.rotation.x = 0.08 + g.weight * 0.3 + Math.sin(t * 2.7) * 0.025;
     const flicker = 0.9 + 0.1 * Math.sin(t * 13.3) * Math.sin(t * 7.1);
     const lanternBoost = outcome === 'won' ? 1 + ending.current * 1.5 : outcome === 'lost' ? 1 - ending.current * 0.85 : 1;
-    j.lanternLight.intensity = 2.2 * flicker * lanternBoost;
+    const oil = boost?.() ?? 0;
+    j.lanternLight.intensity = 2.2 * flicker * lanternBoost * (1 + oil * 0.9);
+    j.lanternLight.distance = LANTERN_BASE_DISTANCE + oil * 2.5;
     j.lanternCore.scale.setScalar(0.9 + flicker * 0.2);
   });
 

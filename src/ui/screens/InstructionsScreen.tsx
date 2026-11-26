@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import { Download, Footprints, Map, Trophy } from 'lucide-react';
+import { Download, Footprints, Gem, Map, Trophy } from 'lucide-react';
 import ScreenShell from '../components/ScreenShell';
 import GuardianHelmIcon from '../components/GuardianHelmIcon';
 import { DIFFICULTY_ORDER, WEATHER_ORDER, difficultyInfo, weatherInfo } from '../options';
@@ -91,9 +91,19 @@ const InstructionsScreen: React.FC = () => (
       </ul>
     </Section>
 
+    <Section title="Hidden treasures" icon={<Gem className="w-5 h-5" aria-hidden="true" />}>
+      <p>
+        Relics lie hidden in the dead ends and far corners of the labyrinth — the bigger the maze, the more there
+        are (3, 5, 7 or 9). They only shimmer inside your lantern light, and you hear a faint chime when one is
+        near. Walk over a relic to claim it: common ones are worth 50 points, uncommon 100 and rare 250, scaled by
+        the trial and weather multipliers. Rain, snow and fog each hide a rare relic of their own. Detours cost
+        time, so decide what is worth the risk.
+      </p>
+    </Section>
+
     <Section title="Glory" icon={<Trophy className="w-5 h-5" aria-hidden="true" />}>
       <p className="numeric">
-        Score = 1000 × trial multiplier × weather multiplier × efficiency, where efficiency is your time compared with the fastest possible escape of that maze (100% = perfect run). Harder trials multiply your score (Easy
+        Score = 1000 × trial multiplier × weather multiplier × efficiency, where efficiency is your time compared with the fastest possible escape of that maze (100% = perfect run), plus the treasure points you found. Harder trials multiply your score (Easy
         ×1, Medium ×1.5, Hard ×2.8, Very Hard ×3.6) and braving the weather multiplies it again:
       </p>
       <ul className="mt-3 flex flex-wrap gap-2">

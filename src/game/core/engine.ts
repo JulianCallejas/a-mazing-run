@@ -3,6 +3,7 @@ import { Cell, distancesFrom, isWalkable, type GridPoint, type Maze } from './ma
 import { findPath } from './pathfinding';
 import { createRandom, shuffle } from './random';
 import type { Difficulty } from './scoring';
+import { LANTERN_BOOST_SECONDS, treasureBasePoints, type Treasure, type TreasureKind } from './treasures';
 
 export type Direction = 'north' | 'east' | 'south' | 'west';
 
@@ -31,8 +32,15 @@ export type GameEvent =
   | { type: 'bump' }
   /** Guardians start hunting (grace period over). Emitted once per run. */
   | { type: 'awaken' }
+  /** The player reached a hidden treasure; `points` is its base value (before multipliers). */
+  | { type: 'treasure'; id: string; kind: TreasureKind; points: number }
   | { type: 'won'; time: number }
   | { type: 'lost'; time: number };
+
+/** A hidden treasure and whether the player has picked it up this run. */
+export interface TreasureState extends Treasure {
+  collected: boolean;
+}
 
 /** A grid-bound character. `position` is the interpolated world-grid position. */
 export interface Actor {
@@ -56,6 +64,8 @@ export interface GameEngineOptions {
   enemySpawns?: GridPoint[];
   /** Overrides the difficulty grace period before guardians start hunting. */
   gracePeriodMs?: number;
+  /** Hidden treasures of this run (see `placeTreasures`); none when omitted. */
+  treasures?: Treasure[];
 }
 
 /** Distance (in tiles) at which a guardian catches the player. */
@@ -133,6 +143,14 @@ export const createGameEngine = (options: GameEngineOptions) => {
     options.enemySpawns ?? pickEnemySpawns(maze, config.enemyCount, options.seed ?? maze.seed + 1);
   const enemies = spawns.map((cell, i) => createActor(`guardian-${i}`, cell, enemyStep));
 
+  const treasures: TreasureState[] = (options.treasures ?? []).map((t) => ({
+    ...t,
+    cell: { ...t.cell },
+    collected: false,
+  }));
+  let collectedPoints = 0;
+  let lanternBoostUntil = 0;
+
   let status: GameStatus = 'ready';
   let elapsed = 0;
   let accumulator = 0;
@@ -183,6 +201,17 @@ export const createGameEngine = (options: GameEngineOptions) => {
     events.push({ type: result, time });
   };
 
+  /** Picks up the treasure on the tile the player just reached, if any. */
+  const collectTreasure = (cell: GridPoint): void => {
+    const treasure = treasures.find((t) => !t.collected && t.cell.x === cell.x && t.cell.z === cell.z);
+    if (!treasure) return;
+    treasure.collected = true;
+    const points = treasureBasePoints(treasure.kind);
+    collectedPoints += points;
+    if (treasure.kind === 'oil-flask') lanternBoostUntil = elapsed + LANTERN_BOOST_SECONDS;
+    events.push({ type: 'treasure', id: treasure.id, kind: treasure.kind, points });
+  };
+
   const continuePlayer = (leftover: number): void => {
     const fromQueue = queued !== null;
     const direction = queued ?? held[held.length - 1];
@@ -200,6 +229,7 @@ export const createGameEngine = (options: GameEngineOptions) => {
     const leftover = advance(player, dt);
     if (leftover < 0) return;
     events.push({ type: 'step' });
+    collectTreasure(player.to);
     if (maze.grid[player.to.z][player.to.x] === Cell.Exit) {
       finish('won', elapsed - leftover);
       return;
@@ -252,6 +282,20 @@ export const createGameEngine = (options: GameEngineOptions) => {
     /** Seconds of active play (excludes ready and paused time). */
     get elapsed(): number {
       return elapsed;
+    },
+
+    /** Hidden treasures; mutated in place as they are collected. */
+    treasures: treasures as ReadonlyArray<Readonly<TreasureState>>,
+    get treasuresFound(): number {
+      return treasures.reduce((n, t) => n + (t.collected ? 1 : 0), 0);
+    },
+    /** Sum of the base points of the treasures collected so far. */
+    get treasurePoints(): number {
+      return collectedPoints;
+    },
+    /** 0..1 strength of the oil-flask lantern boost (fades out linearly). */
+    get lanternBoost(): number {
+      return Math.max(0, Math.min(1, (lanternBoostUntil - elapsed) / LANTERN_BOOST_SECONDS));
     },
 
     start(): void {
