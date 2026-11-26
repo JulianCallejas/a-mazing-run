@@ -69,6 +69,12 @@ const toScoreEntry = (value: unknown): ScoreEntry | null => {
   return entry;
 };
 
+/** Scores are derived from time + settings, so recompute to follow the current formula. */
+const rescore = (entry: ScoreEntry): ScoreEntry =>
+  entry.time > 0
+    ? { ...entry, score: calculateScore(entry.time, entry.difficulty, entry.visualEffect) }
+    : entry;
+
 const byScoreDesc = (a: ScoreEntry, b: ScoreEntry) => b.score - a.score;
 
 export const createHighScoreStore = ({
@@ -85,6 +91,7 @@ export const createHighScoreStore = ({
       return parsed
         .map(toScoreEntry)
         .filter((e): e is ScoreEntry => e !== null)
+        .map(rescore)
         .sort(byScoreDesc)
         .slice(0, MAX_HIGH_SCORES);
     } catch {

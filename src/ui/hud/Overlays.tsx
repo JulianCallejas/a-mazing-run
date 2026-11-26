@@ -133,7 +133,7 @@ export const ResultOverlay = ({ outcome, entry, rank, survived, difficulty, effe
               </div>
               <div className="bg-iron-800/70 py-2">
                 <dt className="font-label text-parchment-500">{weather.label}</dt>
-                <dd className="numeric text-parchment-100">+{weather.bonus}</dd>
+                <dd className="numeric text-parchment-100">×{weather.multiplier}</dd>
               </div>
             </dl>
           </>

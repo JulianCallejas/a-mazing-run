@@ -93,8 +93,8 @@ const InstructionsScreen: React.FC = () => (
 
     <Section title="Glory" icon={<Trophy className="w-5 h-5" aria-hidden="true" />}>
       <p className="numeric">
-        Score = difficulty multiplier × (1000 ÷ seconds) + weather bonus. Harder trials multiply your score (Easy
-        ×0.9, Medium ×1, Hard ×1.05, Very Hard ×1.1) and braving the weather adds a flat bonus:
+        Score = 1000 × trial multiplier × weather multiplier ÷ seconds. Harder trials multiply your score (Easy
+        ×1, Medium ×1.5, Hard ×2.8, Very Hard ×3.6) and braving the weather multiplies it again:
       </p>
       <ul className="mt-3 flex flex-wrap gap-2">
         {WEATHER_ORDER.map((key) => {
@@ -104,7 +104,7 @@ const InstructionsScreen: React.FC = () => (
             <li key={key} className="flex items-center gap-2 px-3 py-1.5 bg-iron-800/60">
               <Icon className="w-4 h-4 text-frost-300" aria-hidden="true" />
               <span className="font-label">{info.label}</span>
-              <span className="numeric text-sm text-gold-300">+{info.bonus}</span>
+              <span className="numeric text-sm text-gold-300">×{info.multiplier}</span>
             </li>
           );
         })}

@@ -5,7 +5,7 @@ export type VisualEffect = keyof typeof GAME_CONFIG.VISUAL_EFFECTS;
 
 /**
  * Score for a winning run:
- * multiplier(difficulty) × (1000 / timeInSeconds) + visualEffectValue, rounded.
+ * round(1000 × difficultyMultiplier × weatherMultiplier / timeInSeconds).
  */
 export const calculateScore = (
   timeInSeconds: number,
@@ -16,8 +16,8 @@ export const calculateScore = (
     throw new RangeError('Run time must be a positive, finite number of seconds');
   }
   const multiplier = GAME_CONFIG.SCORING.MULTIPLIERS[difficulty];
-  const effectValue = GAME_CONFIG.VISUAL_EFFECTS[visualEffect].value;
-  return Math.round(multiplier * (GAME_CONFIG.SCORING.BASE_SCORE / timeInSeconds) + effectValue);
+  const weatherMultiplier = GAME_CONFIG.VISUAL_EFFECTS[visualEffect].multiplier;
+  return Math.round((GAME_CONFIG.SCORING.BASE_SCORE * multiplier * weatherMultiplier) / timeInSeconds);
 };
 
 export const formatTime = (seconds: number): string => {
