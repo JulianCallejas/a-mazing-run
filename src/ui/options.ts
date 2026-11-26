@@ -27,5 +27,5 @@ const WEATHER_PRESENTATION: Record<VisualEffect, { label: string; icon: LucideIc
 
 export const weatherInfo = (effect: VisualEffect) => ({
   ...WEATHER_PRESENTATION[effect],
-  bonus: GAME_CONFIG.VISUAL_EFFECTS[effect].value,
+  multiplier: GAME_CONFIG.VISUAL_EFFECTS[effect].multiplier,
 });

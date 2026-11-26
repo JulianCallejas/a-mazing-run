@@ -226,8 +226,8 @@ describe('guardians', () => {
     engine.start();
     advance(engine, 0.75);
 
-    // HARD guardians move at 100% of player speed: 0.75 s = 1.875 tiles west.
-    expect(engine.enemies[0].position.x).toBeCloseTo(5.125, 1);
+    // HARD guardians move at 97% of player speed: 0.75 s ≈ 1.82 tiles west.
+    expect(engine.enemies[0].position.x).toBeCloseTo(5.18, 1);
     expect(engine.enemies[0].position.z).toBe(3);
   });
 

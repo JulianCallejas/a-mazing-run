@@ -1,26 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import { calculateScore, formatTime } from './scoring';
 
-describe('calculateScore (S11 formula)', () => {
-  it('Easy: 0.9 × (1000/time) + visual_effect_value', () => {
-    expect(calculateScore(50, 'EASY', 'NONE')).toBe(18);
-    expect(calculateScore(50, 'EASY', 'FOG')).toBe(18 + 179);
+describe('calculateScore', () => {
+  it('Easy: 1000 × 1.0 × weather / time', () => {
+    expect(calculateScore(50, 'EASY', 'NONE')).toBe(20);
+    expect(calculateScore(50, 'EASY', 'FOG')).toBe(25);
   });
 
-  it('Medium: (1000/time) + visual_effect_value', () => {
-    expect(calculateScore(40, 'MEDIUM', 'SNOW')).toBe(25 + 163);
+  it('Medium: 1000 × 1.5 × weather / time', () => {
+    expect(calculateScore(40, 'MEDIUM', 'NONE')).toBe(38);
+    expect(calculateScore(40, 'MEDIUM', 'SNOW')).toBe(43);
   });
 
-  it('Hard: 1.05 × (1000/time) + visual_effect_value', () => {
-    expect(calculateScore(10, 'HARD', 'RAIN')).toBe(105 + 147);
+  it('Hard: 1000 × 2.8 × weather / time', () => {
+    expect(calculateScore(10, 'HARD', 'NONE')).toBe(280);
+    expect(calculateScore(10, 'HARD', 'RAIN')).toBe(302);
   });
 
-  it('Very Hard: 1.1 × (1000/time) + visual_effect_value', () => {
-    expect(calculateScore(20, 'VERY_HARD', 'NONE')).toBe(55);
+  it('Very Hard: 1000 × 3.6 × weather / time', () => {
+    expect(calculateScore(20, 'VERY_HARD', 'NONE')).toBe(180);
+    expect(calculateScore(20, 'VERY_HARD', 'FOG')).toBe(225);
   });
 
   it('rounds to the nearest integer', () => {
-    expect(calculateScore(3, 'MEDIUM', 'NONE')).toBe(333);
+    expect(calculateScore(3, 'EASY', 'NONE')).toBe(333);
   });
 
   it('rejects non-positive or non-finite times', () => {

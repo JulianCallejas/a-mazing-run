@@ -28,46 +28,46 @@ export const GAME_CONFIG = {
       name: 'Easy',
       mazeSize: 15,
       enemyCount: 1,
-      speedMultiplier: 0.8,
+      speedMultiplier: 0.78,
       gracePeriod: 2000
     },
     MEDIUM: {
       name: 'Medium',
       mazeSize: 21,
       enemyCount: 1,
-      speedMultiplier: 0.9,
+      speedMultiplier: 0.85,
       gracePeriod: 1500
     },
     HARD: {
       name: 'Hard',
       mazeSize: 27,
       enemyCount: 2,
-      speedMultiplier: 1.0,
+      speedMultiplier: 0.97,
       gracePeriod: 1000
     },
     VERY_HARD: {
       name: 'Very Hard',
       mazeSize: 33,
       enemyCount: 2,
-      speedMultiplier: 1.1,
+      speedMultiplier: 1.03,
       gracePeriod: 500
     }
   },
   
   VISUAL_EFFECTS: {
-    NONE: { name: 'None', value: 0 },
-    FOG: { name: 'Fog', value: 179 },
-    SNOW: { name: 'Snow', value: 163 },
-    RAIN: { name: 'Rain', value: 147 }
+    NONE: { name: 'None', multiplier: 1.0 },
+    FOG: { name: 'Fog', multiplier: 1.25 },
+    SNOW: { name: 'Snow', multiplier: 1.15 },
+    RAIN: { name: 'Rain', multiplier: 1.08 }
   },
   
   SCORING: {
     BASE_SCORE: 1000,
     MULTIPLIERS: {
-      EASY: 0.9,
-      MEDIUM: 1.0,
-      HARD: 1.05,
-      VERY_HARD: 1.1
+      EASY: 1.0,
+      MEDIUM: 1.5,
+      HARD: 2.8,
+      VERY_HARD: 3.6
     }
   }
 };

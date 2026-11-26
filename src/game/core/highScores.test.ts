@@ -33,12 +33,12 @@ describe('high score store', () => {
   const makeStore = () =>
     createHighScoreStore({ storage, now: () => NOW, createId: () => `id-${++ids}` });
 
-  it('saves a winning run with the S11 score and persists it under the legacy key', () => {
+  it('saves a winning run with its score and persists it under the legacy key', () => {
     const entry = makeStore().saveScore({ time: 50, difficulty: 'EASY', visualEffect: 'FOG' });
 
     expect(entry).toEqual({
       id: 'id-1',
-      score: 18 + 179,
+      score: 25,
       time: 50,
       difficulty: 'EASY',
       visualEffect: 'FOG',
@@ -72,7 +72,8 @@ describe('high score store', () => {
     ];
     storage.setItem(HIGH_SCORES_STORAGE_KEY, JSON.stringify(legacy));
 
-    expect(makeStore().getTopScores()).toEqual(legacy);
+    // Stored scores are recomputed from time + settings with the current formula.
+    expect(makeStore().getTopScores()).toEqual([{ ...legacy[0], score: 560 }]);
   });
 
   it('ignores corrupted JSON and malformed entries instead of crashing', () => {
@@ -98,8 +99,8 @@ describe('high score store', () => {
     for (let time = 1; time <= 10; time++) {
       store.saveScore({ time, difficulty: 'MEDIUM', visualEffect: 'NONE' });
     }
-    expect(store.isHighScore(50)).toBe(false);
-    expect(store.isHighScore(101)).toBe(true);
+    expect(store.isHighScore(100)).toBe(false);
+    expect(store.isHighScore(151)).toBe(true);
   });
 
   it('keeps working when storage throws (private mode / quota)', () => {
@@ -115,7 +116,7 @@ describe('high score store', () => {
     const store = createHighScoreStore({ storage: failing, now: () => NOW, createId: () => 'x' });
 
     expect(store.getTopScores()).toEqual([]);
-    expect(store.saveScore({ time: 10, difficulty: 'MEDIUM', visualEffect: 'NONE' }).score).toBe(100);
+    expect(store.saveScore({ time: 10, difficulty: 'MEDIUM', visualEffect: 'NONE' }).score).toBe(150);
   });
 
   it('clears all stored scores', () => {

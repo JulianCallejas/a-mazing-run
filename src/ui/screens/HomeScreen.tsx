@@ -95,7 +95,7 @@ const HomeScreen: React.FC = () => {
                   <span className="min-w-0">
                     <span className="font-label text-sm sm:text-base block leading-tight">{info.label}</span>
                     <span className="text-xs text-parchment-500 numeric">
-                      {info.bonus > 0 ? `+${info.bonus} pts` : 'no bonus'}
+                      {info.multiplier > 1 ? `score ×${info.multiplier}` : 'no bonus'}
                     </span>
                   </span>
                 </button>
